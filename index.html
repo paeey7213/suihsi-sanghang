@@ -6,6 +6,8 @@
   <title>隨喜商行 Suihsi Market - 線上食材預約</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Supabase JS Client SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -71,7 +73,6 @@
           <span>預估總計金額：</span>
           <span class="text-amber-700 text-xl" id="cartTotal">NT$ 0</span>
         </div>
-        <!-- 新增金額備註 -->
         <p class="text-[11px] text-amber-900 bg-amber-100/70 p-1.5 rounded font-medium text-center">
           ＊依照實際重量為主 會和訂單金額稍有落差
         </p>
@@ -93,8 +94,8 @@
             </select>
           </div>
 
-          <button type="submit" class="w-full bg-amber-700 hover:bg-amber-800 text-white font-bold py-3 rounded-md shadow-md transition text-center mt-2">
-            確認送出食材預約
+          <button type="submit" id="submitBtn" class="w-full bg-amber-700 hover:bg-amber-800 text-white font-bold py-3 rounded-md shadow-md transition text-center mt-2 flex items-center justify-center gap-2">
+            <span>確認送出食材預約</span>
           </button>
         </form>
       </div>
@@ -156,6 +157,9 @@
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
             <i class="fa-solid fa-receipt text-amber-700"></i> 即時訂單列表
+            <span class="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-normal flex items-center gap-1">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Supabase 即時連線
+            </span>
           </h2>
           <div class="flex items-center space-x-2">
             <button onclick="openExportModal('batch')" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1">
@@ -366,8 +370,12 @@
   </div>
 
   <script>
-    const defaultCategories = ['蔬菜', '肉類', '海鮮', '火鍋料', '麵粉乾貨', '水果'];
+    // Supabase 設定與初始化
+    const SUPABASE_URL = 'https://mwqrzcleywhlwmwvdhqi.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_DOkDS_DI_2xmKUMA6_zzCA_aNk2fw13';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    const defaultCategories = ['蔬菜', '肉類', '海鮮', '火鍋料', '麵粉乾貨', '水果'];
     const defaultProducts = [
       { id: '1', name: '高麗菜', category: '蔬菜', internalCat: '老闆單', units: [{ name: '斤', price: 35, isOnSite: false }, { name: '半斤', price: 18, isOnSite: false }, { name: '顆', price: 0, isOnSite: true }], desc: '高山產直脆甜', image: 'https://images.unsplash.com/photo-1594282486552-05b4d80fbb9f?w=400' },
       { id: '2', name: '大白菜', category: '蔬菜', internalCat: '老闆單', units: [{ name: '斤', price: 28, isOnSite: false }], desc: '', image: 'https://images.unsplash.com/photo-1587049352847-4a222e784d38?w=400' },
@@ -377,7 +385,7 @@
 
     let categories = JSON.parse(localStorage.getItem('sh_categories')) || defaultCategories;
     let products = JSON.parse(localStorage.getItem('sh_products')) || defaultProducts;
-    let orders = JSON.parse(localStorage.getItem('sh_orders')) || [];
+    let orders = [];
     let cart = [];
     let selectingUnitProduct = {};
     let currentCategory = '全部';
@@ -385,23 +393,94 @@
     let currentUploadedLogoBase64 = '';
     let exportMode = 'batch';
 
-    function init() {
-      if (!localStorage.getItem('sh_categories')) {
-        localStorage.setItem('sh_categories', JSON.stringify(defaultCategories));
-      }
-      if (!localStorage.getItem('sh_products')) {
-        localStorage.setItem('sh_products', JSON.stringify(defaultProducts));
-      }
+    async function init() {
       if (!localStorage.getItem('admin_pwd')) {
         localStorage.setItem('admin_pwd', 'admin888');
       }
       loadSiteLogo();
+      await fetchCategories();
+      await fetchProducts();
+      await fetchOrders();
+      setupRealtimeOrders();
       renderCategories();
       renderProducts();
       updateCartUI();
       renderOrders();
       renderProductsAdmin();
       renderCategoriesAdmin();
+    }
+
+    // --- Supabase API 操作 ---
+    async function fetchOrders() {
+      try {
+        const { data, error } = await supabase
+          .from('orders')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        orders = data.map(o => ({
+          id: o.order_id || o.id,
+          date: o.date || new Date(o.created_at).toLocaleString('zh-TW'),
+          custName: o.cust_name,
+          custPhone: o.cust_phone,
+          pickupTime: o.pickup_time,
+          rawItems: o.raw_items,
+          items: o.items,
+          total: o.total,
+          status: o.status
+        }));
+      } catch (err) {
+        console.warn('Supabase fetchOrders 失敗，改用 LocalStorage:', err);
+        orders = JSON.parse(localStorage.getItem('sh_orders')) || [];
+      }
+    }
+
+    async function fetchProducts() {
+      try {
+        const { data, error } = await supabase.from('products').select('*');
+        if (error) throw error;
+        if (data && data.length > 0) {
+          products = data.map(p => ({
+            id: p.id.toString(),
+            name: p.name,
+            category: p.category,
+            internalCat: p.internal_cat,
+            units: p.units,
+            desc: p.desc,
+            image: p.image
+          }));
+          localStorage.setItem('sh_products', JSON.stringify(products));
+        }
+      } catch (err) {
+        console.warn('Supabase fetchProducts 失敗，改用 LocalStorage:', err);
+        products = JSON.parse(localStorage.getItem('sh_products')) || defaultProducts;
+      }
+    }
+
+    async function fetchCategories() {
+      try {
+        const { data, error } = await supabase.from('categories').select('*');
+        if (error) throw error;
+        if (data && data.length > 0) {
+          categories = data.map(c => c.name);
+          localStorage.setItem('sh_categories', JSON.stringify(categories));
+        }
+      } catch (err) {
+        console.warn('Supabase fetchCategories 失敗，改用 LocalStorage:', err);
+        categories = JSON.parse(localStorage.getItem('sh_categories')) || defaultCategories;
+      }
+    }
+
+    // 即時 (Realtime) 監聽訂單變化
+    function setupRealtimeOrders() {
+      supabase
+        .channel('public:orders')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, async (payload) => {
+          await fetchOrders();
+          renderOrders();
+        })
+        .subscribe();
     }
 
     function loadSiteLogo() {
@@ -451,7 +530,6 @@
 
     function renderCategories() {
       const container = document.getElementById('categoryContainer');
-      categories = JSON.parse(localStorage.getItem('sh_categories')) || defaultCategories;
       const allCats = ['全部', ...categories];
 
       container.innerHTML = allCats.map(cat => `
@@ -469,7 +547,6 @@
 
     function renderProducts() {
       const grid = document.getElementById('productGrid');
-      products = JSON.parse(localStorage.getItem('sh_products')) || defaultProducts;
       const filtered = currentCategory === '全部' ? products : products.filter(p => p.category === currentCategory);
 
       if (filtered.length === 0) {
@@ -544,7 +621,6 @@
     }
 
     function handleFirstClick(id) {
-      products = JSON.parse(localStorage.getItem('sh_products')) || defaultProducts;
       const product = products.find(p => p.id === id);
       if (!product) return;
 
@@ -558,7 +634,6 @@
     }
 
     function confirmUnitAndAdd(id, unitName, unitPrice, isOnSite) {
-      products = JSON.parse(localStorage.getItem('sh_products')) || defaultProducts;
       const product = products.find(p => p.id === id);
       if (!product) return;
 
@@ -659,12 +734,16 @@
       document.getElementById('cartModal').classList.toggle('hidden');
     }
 
-    function submitOrder(e) {
+    async function submitOrder(e) {
       e.preventDefault();
       if (cart.length === 0) {
         alert('您的預約清單是空的！');
         return;
       }
+
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> 處理送出中...`;
 
       let totalAmount = 0;
       cart.forEach(item => {
@@ -673,35 +752,52 @@
         }
       });
 
-      const order = {
-        id: 'ORD-' + Date.now().toString().slice(-6),
-        date: new Date().toLocaleString('zh-TW'),
-        custName: document.getElementById('custName').value,
-        custPhone: document.getElementById('custPhone').value,
-        pickupTime: document.getElementById('pickupTime').value,
-        rawItems: cart.map(i => ({
-          name: i.name,
-          qty: i.qty,
-          unitName: i.unitName,
-          isOnSite: i.isOnSite,
-          internalCat: i.internalCat || '一般商品（不需特別備註）'
-        })),
-        items: cart.map(i => `${i.name} x ${i.qty}${i.unitName}${i.isOnSite ? '(現場計價)' : ''}`).join('、'),
-        total: totalAmount > 0 ? `NT$ ${totalAmount}${cart.some(i => i.isOnSite) ? ' + 時價' : ''}` : '現場計價',
+      const orderId = 'ORD-' + Date.now().toString().slice(-6);
+      const dateStr = new Date().toLocaleString('zh-TW');
+      const custName = document.getElementById('custName').value;
+      const custPhone = document.getElementById('custPhone').value;
+      const pickupTime = document.getElementById('pickupTime').value;
+      const rawItems = cart.map(i => ({
+        name: i.name,
+        qty: i.qty,
+        unitName: i.unitName,
+        isOnSite: i.isOnSite,
+        internalCat: i.internalCat || '一般商品（不需特別備註）'
+      }));
+      const itemsStr = cart.map(i => `${i.name} x ${i.qty}${i.unitName}${i.isOnSite ? '(現場計價)' : ''}`).join('、');
+      const totalStr = totalAmount > 0 ? `NT$ ${totalAmount}${cart.some(i => i.isOnSite) ? ' + 時價' : ''}` : '現場計價';
+
+      const newOrderObj = {
+        order_id: orderId,
+        date: dateStr,
+        cust_name: custName,
+        cust_phone: custPhone,
+        pickup_time: pickupTime,
+        raw_items: rawItems,
+        items: itemsStr,
+        total: totalStr,
         status: '待處理'
       };
 
-      orders = JSON.parse(localStorage.getItem('sh_orders')) || [];
-      orders.unshift(order);
-      localStorage.setItem('sh_orders', JSON.stringify(orders));
+      try {
+        const { error } = await supabase.from('orders').insert([newOrderObj]);
+        if (error) throw error;
 
-      alert('感謝您的預約！我們已收到您的訂單。');
-      cart = [];
-      updateCartUI();
-      renderProducts();
-      toggleCartModal();
-      document.getElementById('orderForm').reset();
-      renderOrders();
+        alert('感謝您的預約！我們已收到您的訂單。');
+        cart = [];
+        updateCartUI();
+        renderProducts();
+        toggleCartModal();
+        document.getElementById('orderForm').reset();
+        await fetchOrders();
+        renderOrders();
+      } catch (err) {
+        console.error('新增訂單失敗:', err);
+        alert('訂單傳送時發生錯誤，請稍後再試。');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `確認送出食材預約`;
+      }
     }
 
     // Admin Functions
@@ -749,33 +845,42 @@
       checkboxes.forEach(cb => cb.checked = source.checked);
     }
 
-    function deleteSelectedOrders() {
+    async function deleteSelectedOrders() {
       const selectedIds = Array.from(document.querySelectorAll('.order-checkbox:checked')).map(cb => cb.value);
       if (selectedIds.length === 0) {
         alert('請先勾選要刪除的訂單！');
         return;
       }
       if (confirm(`確定要刪除勾選的 ${selectedIds.length} 筆訂單嗎？`)) {
-        orders = JSON.parse(localStorage.getItem('sh_orders')) || [];
-        orders = orders.filter(o => !selectedIds.includes(o.id));
-        localStorage.setItem('sh_orders', JSON.stringify(orders));
-        renderOrders();
-        document.getElementById('selectAllOrders').checked = false;
+        try {
+          const { error } = await supabase.from('orders').delete().in('order_id', selectedIds);
+          if (error) throw error;
+          await fetchOrders();
+          renderOrders();
+          document.getElementById('selectAllOrders').checked = false;
+        } catch (err) {
+          console.error('刪除失敗:', err);
+          alert('刪除失敗：' + err.message);
+        }
       }
     }
 
-    function deleteOrder(id) {
+    async function deleteOrder(id) {
       if (confirm('確定要刪除這筆訂單嗎？')) {
-        orders = JSON.parse(localStorage.getItem('sh_orders')) || [];
-        orders = orders.filter(o => o.id !== id);
-        localStorage.setItem('sh_orders', JSON.stringify(orders));
-        renderOrders();
+        try {
+          const { error } = await supabase.from('orders').delete().eq('order_id', id);
+          if (error) throw error;
+          await fetchOrders();
+          renderOrders();
+        } catch (err) {
+          console.error('刪除失敗:', err);
+          alert('刪除失敗：' + err.message);
+        }
       }
     }
 
     function renderOrders() {
       const tbody = document.getElementById('ordersTableBody');
-      orders = JSON.parse(localStorage.getItem('sh_orders')) || [];
 
       if (orders.length === 0) {
         tbody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-gray-400">目前尚無預約訂單</td></tr>`;
@@ -811,7 +916,6 @@
 
     function renderCategoriesAdmin() {
       const tbody = document.getElementById('categoriesTableBody');
-      categories = JSON.parse(localStorage.getItem('sh_categories')) || defaultCategories;
 
       tbody.innerHTML = categories.map((cat, index) => `
         <tr class="border-b hover:bg-gray-50">
@@ -824,20 +928,22 @@
       `).join('');
     }
 
-    function openAddCategoryPrompt() {
+    async function openAddCategoryPrompt() {
       const newCat = prompt('請輸入要新增的前台商品分類名稱：');
       if (newCat && newCat.trim() !== '') {
-        categories = JSON.parse(localStorage.getItem('sh_categories')) || defaultCategories;
-        if (categories.includes(newCat.trim())) { alert('該分類名稱已存在！'); return; }
-        categories.push(newCat.trim());
+        const trimmed = newCat.trim();
+        if (categories.includes(trimmed)) { alert('該分類名稱已存在！'); return; }
+        categories.push(trimmed);
         localStorage.setItem('sh_categories', JSON.stringify(categories));
+        try {
+          await supabase.from('categories').insert([{ name: trimmed }]);
+        } catch (e) { console.warn(e); }
         renderCategoriesAdmin();
         renderCategories();
       }
     }
 
     function editCategoryPrompt(index) {
-      categories = JSON.parse(localStorage.getItem('sh_categories')) || defaultCategories;
       const oldCat = categories[index];
       const updatedCat = prompt('請輸入修改後的分類名稱：', oldCat);
       if (updatedCat && updatedCat.trim() !== '' && updatedCat !== oldCat) {
@@ -850,7 +956,6 @@
 
     function deleteCategory(index) {
       if (confirm('確定要刪除此分類嗎？')) {
-        categories = JSON.parse(localStorage.getItem('sh_categories')) || defaultCategories;
         categories.splice(index, 1);
         localStorage.setItem('sh_categories', JSON.stringify(categories));
         renderCategoriesAdmin();
@@ -860,7 +965,6 @@
 
     function renderProductsAdmin() {
       const tbody = document.getElementById('productsTableBody');
-      products = JSON.parse(localStorage.getItem('sh_products')) || defaultProducts;
 
       tbody.innerHTML = products.map(p => {
         const unitDisplay = (p.units || []).map(u => `${u.name}: ${u.isOnSite ? '現場計價' : '$' + u.price}`).join('、');
@@ -885,7 +989,6 @@
       }).join('');
     }
 
-    // 單位列新增（支援獨立設定現場計價）
     function addUnitRow(name = '', price = '', isOnSite = false) {
       const container = document.getElementById('unitRowsContainer');
       const div = document.createElement('div');
@@ -917,7 +1020,6 @@
       document.getElementById('prodInternalCat').value = '一般商品（不需特別備註）';
       
       const catSelect = document.getElementById('prodCategory');
-      categories = JSON.parse(localStorage.getItem('sh_categories')) || defaultCategories;
       catSelect.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
 
       document.getElementById('unitRowsContainer').innerHTML = '';
@@ -958,7 +1060,7 @@
       }
     }
 
-    function saveProduct(e) {
+    async function saveProduct(e) {
       e.preventDefault();
       const id = document.getElementById('prodId').value || Date.now().toString();
       const name = document.getElementById('prodName').value;
@@ -986,23 +1088,35 @@
       const finalImage = currentUploadedImageBase64 || imageUrlInput || 'https://via.placeholder.com/300x200?text=新鮮食材';
       const productObj = { id, name, desc, category, internalCat, units, image: finalImage };
 
-      products = JSON.parse(localStorage.getItem('sh_products')) || defaultProducts;
       const index = products.findIndex(p => p.id === id);
       if (index >= 0) { products[index] = productObj; } else { products.push(productObj); }
 
       localStorage.setItem('sh_products', JSON.stringify(products));
+
+      try {
+        await supabase.from('products').upsert([{
+          id: id,
+          name: name,
+          category: category,
+          internal_cat: internalCat,
+          units: units,
+          desc: desc,
+          image: finalImage
+        }]);
+      } catch (err) {
+        console.warn('Supabase 同步商品失敗:', err);
+      }
+
       renderProductsAdmin();
       renderProducts();
       closeProductModal();
     }
 
     function editProduct(id) {
-      products = JSON.parse(localStorage.getItem('sh_products')) || defaultProducts;
       const p = products.find(prod => prod.id === id);
       if (!p) return;
 
       const catSelect = document.getElementById('prodCategory');
-      categories = JSON.parse(localStorage.getItem('sh_categories')) || defaultCategories;
       catSelect.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
 
       document.getElementById('prodId').value = p.id;
@@ -1021,28 +1135,41 @@
       document.getElementById('productModal').classList.remove('hidden');
     }
 
-    function deleteProduct(id) {
+    async function deleteProduct(id) {
       if (confirm('確定要刪除此食材嗎？')) {
-        products = JSON.parse(localStorage.getItem('sh_products')) || defaultProducts;
         products = products.filter(p => p.id !== id);
         localStorage.setItem('sh_products', JSON.stringify(products));
+        try {
+          await supabase.from('products').delete().eq('id', id);
+        } catch (err) {
+          console.warn('Supabase 刪除商品失敗:', err);
+        }
         renderProductsAdmin();
         renderProducts();
       }
     }
 
-    function toggleOrderStatus(id) {
-      orders = JSON.parse(localStorage.getItem('sh_orders')) || [];
+    async function toggleOrderStatus(id) {
       const order = orders.find(o => o.id === id);
       if (order) {
-        order.status = order.status === '待處理' ? '已完成' : '待處理';
-        localStorage.setItem('sh_orders', JSON.stringify(orders));
-        renderOrders();
+        const nextStatus = order.status === '待處理' ? '已完成' : '待處理';
+        try {
+          const { error } = await supabase
+            .from('orders')
+            .update({ status: nextStatus })
+            .eq('order_id', id);
+
+          if (error) throw error;
+          await fetchOrders();
+          renderOrders();
+        } catch (err) {
+          console.error('更新訂單狀態失敗:', err);
+          alert('更新狀態失敗：' + err.message);
+        }
       }
     }
 
     function executeExport(type) {
-      orders = JSON.parse(localStorage.getItem('sh_orders')) || [];
       let targetOrders = orders;
 
       if (exportMode === 'batch') {
