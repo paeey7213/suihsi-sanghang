@@ -396,18 +396,28 @@
     let currentUploadedLogoBase64 = '';
     let exportMode = 'batch';
 
-    async function init() {
+    function init() {
+      if (!localStorage.getItem('sh_categories')) {
+        localStorage.setItem('sh_categories', JSON.stringify(defaultCategories));
+      }
+      if (!localStorage.getItem('sh_products')) {
+        localStorage.setItem('sh_products', JSON.stringify(defaultProducts));
+      }
       if (!localStorage.getItem('admin_pwd')) {
         localStorage.setItem('admin_pwd', 'admin888');
       }
       loadSiteLogo();
-      await fetchOrdersFromSupabase();
+      
+      // 先渲染本地分類與商品，確保畫面絕對不會空白
       renderCategories();
       renderProducts();
       updateCartUI();
       renderOrders();
       renderProductsAdmin();
       renderCategoriesAdmin();
+
+      // 在背景默默去抓 Supabase 雲端訂單與即時更新
+      fetchOrdersFromSupabase();
 
       // 即時監聽 Supabase 訂單變化 (Realtime)
       supabase
@@ -430,7 +440,6 @@
         console.error('讀取雲端訂單失敗，改用本地缓存', error);
         orders = JSON.parse(localStorage.getItem('sh_orders')) || [];
       } else {
-        // 將資料庫的欄位對應回前端結構
         orders = data.map(o => ({
           id: o.order_id,
           date: o.date,
