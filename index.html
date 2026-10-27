@@ -359,7 +359,7 @@
 
         <div class="flex justify-end space-x-2 pt-4 border-t">
           <button type="button" onclick="closeProductModal()" class="px-4 py-2 border rounded-md text-sm font-bold text-gray-600 hover:bg-gray-100">取消</button>
-          <button type="submit" class="px-4 py-2 bg-amber-800 hover:bg-amber-900 text-white rounded-md text-sm font-bold shadow-sm">儲存設定</button>
+          <button type="submit" id="saveProductBtn" class="px-4 py-2 bg-amber-800 hover:bg-amber-900 text-white rounded-md text-sm font-bold shadow-sm">儲存設定</button>
         </div>
       </form>
     </div>
@@ -408,19 +408,16 @@
     async function fetchCloudData() {
       try {
         // 讀取分類
-        const { data: catData } = await supabaseClient.from('categories').select('*');
-        if (catData && catData.length > 0) {
+        const { data: catData, error: catErr } = await supabaseClient.from('categories').select('*');
+        if (!catErr && catData && catData.length > 0) {
           categories = catData.map(c => c.name);
         } else {
           categories = defaultCategories;
-          for (let c of defaultCategories) {
-            await supabaseClient.from('categories').insert([{ name: c }]);
-          }
         }
 
         // 讀取商品
-        const { data: prodData } = await supabaseClient.from('products').select('*');
-        if (prodData && prodData.length > 0) {
+        const { data: prodData, error: prodErr } = await supabaseClient.from('products').select('*');
+        if (!prodErr && prodData && prodData.length > 0) {
           products = prodData.map(p => ({
             id: p.id,
             name: p.name,
@@ -432,21 +429,11 @@
           }));
         } else {
           products = defaultProducts;
-          for (let p of defaultProducts) {
-            await supabaseClient.from('products').insert([{
-              name: p.name,
-              category: p.category,
-              internal_cat: p.internalCat,
-              description: p.desc,
-              image: p.image,
-              units: p.units
-            }]);
-          }
         }
 
         // 讀取訂單
-        const { data: ordData } = await supabaseClient.from('orders').select('*').order('created_at', { ascending: false });
-        if (ordData) {
+        const { data: ordData, error: ordErr } = await supabaseClient.from('orders').select('*').order('created_at', { ascending: false });
+        if (!ordErr && ordData) {
           orders = ordData.map(o => ({
             id: o.order_id,
             date: new Date(o.created_at).toLocaleString('zh-TW'),
@@ -460,10 +447,7 @@
           }));
         }
       } catch (err) {
-        console.warn('雲端連線失敗，自動切換為本地模式', err);
-        categories = JSON.parse(localStorage.getItem('sh_categories')) || defaultCategories;
-        products = JSON.parse(localStorage.getItem('sh_products')) || defaultProducts;
-        orders = JSON.parse(localStorage.getItem('sh_orders')) || [];
+        console.warn('雲端連線問題：', err);
       }
     }
 
@@ -745,10 +729,11 @@
       };
 
       try {
-        await supabaseClient.from('orders').insert([newOrder]);
+        const { error } = await supabaseClient.from('orders').insert([newOrder]);
+        if (error) throw error;
         alert('感謝您的預約！我們已收到您的訂單。');
       } catch (err) {
-        alert('送出預約發生錯誤，請稍後再試');
+        alert('送出預約發生錯誤：' + err.message);
         console.error(err);
       }
 
@@ -999,47 +984,73 @@
       }
     }
 
+    // 儲存商品（徹底修復版）
     async function saveProduct(e) {
       e.preventDefault();
-      const id = document.getElementById('prodId').value;
-      const name = document.getElementById('prodName').value;
-      const desc = document.getElementById('prodDesc').value;
-      const category = document.getElementById('prodCategory').value;
-      const internalCat = document.getElementById('prodInternalCat').value;
-      const imageUrlInput = document.getElementById('prodImageUrl').value;
+      const saveBtn = document.getElementById('saveProductBtn');
+      saveBtn.innerText = '儲存中...';
+      saveBtn.disabled = true;
 
-      const unitRows = document.querySelectorAll('.unit-row');
-      const units = [];
-      unitRows.forEach(row => {
-        const uName = row.querySelector('.unit-name-input').value.trim();
-        const uPrice = parseFloat(row.querySelector('.unit-price-input').value);
-        const uOnSite = row.querySelector('.unit-onsite-checkbox').checked;
-        if (uName && !isNaN(uPrice)) { 
-          units.push({ name: uName, price: uPrice, isOnSite: uOnSite }); 
+      try {
+        const idVal = document.getElementById('prodId').value.trim();
+        const name = document.getElementById('prodName').value;
+        const desc = document.getElementById('prodDesc').value;
+        const category = document.getElementById('prodCategory').value;
+        const internalCat = document.getElementById('prodInternalCat').value;
+        const imageUrlInput = document.getElementById('prodImageUrl').value;
+
+        const unitRows = document.querySelectorAll('.unit-row');
+        const units = [];
+        unitRows.forEach(row => {
+          const uName = row.querySelector('.unit-name-input').value.trim();
+          const uPrice = parseFloat(row.querySelector('.unit-price-input').value);
+          const uOnSite = row.querySelector('.unit-onsite-checkbox').checked;
+          if (uName && !isNaN(uPrice)) { 
+            units.push({ name: uName, price: uPrice, isOnSite: uOnSite }); 
+          }
+        });
+        
+        if (units.length === 0) {
+          alert('請至少新增一個單位與價格！');
+          saveBtn.innerText = '儲存設定';
+          saveBtn.disabled = false;
+          return;
         }
-      });
-      if (units.length === 0) { alert('請至少新增一個單位與價格！'); return; }
 
-      const finalImage = currentUploadedImageBase64 || imageUrlInput || 'https://via.placeholder.com/300x200?text=新鮮食材';
-      const productObj = {
-        name,
-        category,
-        internal_cat: internalCat,
-        description: desc,
-        image: finalImage,
-        units
-      };
+        const finalImage = currentUploadedImageBase64 || imageUrlInput || 'https://via.placeholder.com/300x200?text=新鮮食材';
+        
+        const payload = {
+          name,
+          category,
+          internal_cat: internalCat,
+          description: desc,
+          image: finalImage,
+          units
+        };
 
-      if (id && id !== '') {
-        await supabaseClient.from('products').update(productObj).eq('id', Number(id));
-      } else {
-        await supabaseClient.from('products').insert([productObj]);
+        // 判斷是編輯還是新增
+        if (idVal !== '' && !isNaN(Number(idVal))) {
+          const targetId = Number(idVal);
+          const { error } = await supabaseClient.from('products').update(payload).eq('id', targetId);
+          if (error) throw error;
+        } else {
+          const { error } = await supabaseClient.from('products').insert([payload]);
+          if (error) throw error;
+        }
+
+        alert('食材資料已成功儲存至 Supabase 雲端！');
+        closeProductModal();
+        await fetchCloudData();
+        renderProductsAdmin();
+        renderProducts();
+
+      } catch (err) {
+        alert('儲存失敗：' + (err.message || '請檢查網路或 Supabase 權限設定'));
+        console.error('Save Product Error:', err);
+      } finally {
+        saveBtn.innerText = '儲存設定';
+        saveBtn.disabled = false;
       }
-
-      await fetchCloudData();
-      renderProductsAdmin();
-      renderProducts();
-      closeProductModal();
     }
 
     function editProduct(id) {
@@ -1067,10 +1078,15 @@
 
     async function deleteProduct(id) {
       if (confirm('確定要刪除此食材嗎？')) {
-        await supabaseClient.from('products').delete().eq('id', Number(id));
-        await fetchCloudData();
-        renderProductsAdmin();
-        renderProducts();
+        try {
+          const { error } = await supabaseClient.from('products').delete().eq('id', Number(id));
+          if (error) throw error;
+          await fetchCloudData();
+          renderProductsAdmin();
+          renderProducts();
+        } catch (err) {
+          alert('刪除失敗：' + err.message);
+        }
       }
     }
 
