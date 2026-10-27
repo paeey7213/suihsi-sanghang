@@ -243,13 +243,13 @@
           <i class="fa-solid fa-gear text-amber-700"></i> 網站商標與安全密碼設定
         </h2>
         <div class="space-y-2">
-          <label class="block text-sm font-bold text-gray-700">更改左上角網站商標 Logo</label>
+          <label class="block text-sm font-bold text-gray-700">更改左上角網站商標 Logo (雲端跨裝置同步)</label>
           <div class="flex items-center gap-4">
             <img id="settingLogoPreview" src="" class="h-12 w-auto object-contain border rounded p-1 bg-gray-50" onerror="this.src='https://via.placeholder.com/150x60?text=Logo'">
             <input type="file" id="logoImageFile" accept="image/*" onchange="handleLogoUpload(event)" class="text-xs text-gray-500">
           </div>
           <input type="url" id="logoImageUrlInput" placeholder="或貼上圖片網址 https://" class="w-full px-3 py-2 border rounded-md text-sm outline-none mt-1">
-          <button onclick="saveLogo()" class="px-4 py-2 bg-amber-800 hover:bg-amber-900 text-white rounded-md text-xs font-bold transition mt-2">儲存新商標</button>
+          <button onclick="saveLogo()" class="px-4 py-2 bg-amber-800 hover:bg-amber-900 text-white rounded-md text-xs font-bold transition mt-2">儲存並同步全站商標</button>
         </div>
         <hr class="my-4">
         <div class="space-y-3">
@@ -374,11 +374,7 @@
 
     const defaultCategories = ['蔬菜', '肉類', '海鮮', '火鍋料', '麵粉乾貨', '水果'];
     const defaultProducts = [
-      { id: 1, name: '高麗菜', category: '蔬菜', internalCat: '老闆單', units: [{ name: '斤', price: 35, isOnSite: false }, { name: '半斤', price: 18, isOnSite: false }], desc: '高山產直脆甜', image: 'https://images.unsplash.com/photo-1594282486552-05b4d80fbb9f?w=400' },
-      { id: 2, name: '大白菜', category: '蔬菜', internalCat: '老闆單', units: [{ name: '斤', price: 28, isOnSite: false }], desc: '', image: 'https://images.unsplash.com/photo-1587049352847-4a222e784d38?w=400' },
-      { id: 3, name: '台灣五花肉', category: '肉類', internalCat: '老闆娘單', units: [{ name: '斤', price: 160, isOnSite: false }, { name: '半斤', price: 80, isOnSite: false }], desc: '每日溫體直送切塊', image: 'https://images.unsplash.com/photo-1602470520998-f4a52199a3d6?w=400' },
-      { id: 4, name: '活體大閘蟹', category: '海鮮', internalCat: '老闆娘單', units: [{ name: '隻', price: 0, isOnSite: true }, { name: '斤', price: 900, isOnSite: false }], desc: '時價秤重現場報價', image: 'https://images.unsplash.com/photo-1534483509719-3feaee7c30da?w=400' },
-      { id: 5, name: '手工蛋餃', category: '火鍋料', internalCat: '一般商品（不需特別備註）', units: [{ name: '包', price: 65, isOnSite: false }, { name: '盒', price: 120, isOnSite: false }], desc: '一包10入餡料飽滿', image: 'https://images.unsplash.com/photo-1541696432-82c6da8ce7bf?w=400' }
+      { id: 1, name: '高麗菜', category: '蔬菜', internalCat: '老闆單', units: [{ name: '斤', price: 35, isOnSite: false }, { name: '半斤', price: 18, isOnSite: false }], desc: '高山產直脆甜', image: 'https://images.unsplash.com/photo-1594282486552-05b4d80fbb9f?w=400' }
     ];
 
     let categories = [];
@@ -388,13 +384,14 @@
     let selectingUnitProduct = {};
     let currentCategory = '全部';
     let currentUploadedImageBase64 = '';
+    let currentUploadedLogoBase64 = '';
     let exportMode = 'batch';
 
     async function init() {
       if (!localStorage.getItem('admin_pwd')) {
         localStorage.setItem('admin_pwd', 'admin888');
       }
-      loadSiteLogo();
+      await loadSiteLogo();
       await fetchCloudData();
       renderCategories();
       renderProducts();
@@ -451,8 +448,17 @@
       }
     }
 
-    function loadSiteLogo() {
-      const savedLogo = localStorage.getItem('site_logo') || 'https://i.imgur.com/uR4K2uM.png';
+    // 讀取雲端 Logo
+    async function loadSiteLogo() {
+      let savedLogo = 'https://i.imgur.com/uR4K2uM.png';
+      try {
+        const { data, error } = await supabaseClient.from('settings').select('value').eq('id', 'site_logo').single();
+        if (!error && data && data.value) {
+          savedLogo = data.value;
+        }
+      } catch (e) {
+        console.warn('讀取 Logo 失敗，使用預設圖片', e);
+      }
       document.getElementById('siteLogoImg').src = savedLogo;
       document.getElementById('settingLogoPreview').src = savedLogo;
       document.getElementById('logoImageUrlInput').value = savedLogo.startsWith('data:') ? '' : savedLogo;
@@ -470,12 +476,19 @@
       }
     }
 
-    function saveLogo() {
+    // 儲存 Logo 至 Supabase 雲端
+    async function saveLogo() {
       const urlInput = document.getElementById('logoImageUrlInput').value;
       const finalLogo = currentUploadedLogoBase64 || urlInput || 'https://i.imgur.com/uR4K2uM.png';
-      localStorage.setItem('site_logo', finalLogo);
-      loadSiteLogo();
-      alert('網站商標 Logo 已成功更新！');
+      
+      try {
+        const { error } = await supabaseClient.from('settings').upsert([{ id: 'site_logo', value: finalLogo }]);
+        if (error) throw error;
+        alert('網站商標 Logo 已成功儲存並同步至雲端！');
+        await loadSiteLogo();
+      } catch (err) {
+        alert('儲存 Logo 失敗：' + err.message);
+      }
     }
 
     function saveNewPasswordWithValidation() {
@@ -984,7 +997,7 @@
       }
     }
 
-    // 儲存商品（徹底修復版）
+    // 儲存商品
     async function saveProduct(e) {
       e.preventDefault();
       const saveBtn = document.getElementById('saveProductBtn');
@@ -1028,7 +1041,6 @@
           units
         };
 
-        // 判斷是編輯還是新增
         if (idVal !== '' && !isNaN(Number(idVal))) {
           const targetId = Number(idVal);
           const { error } = await supabaseClient.from('products').update(payload).eq('id', targetId);
