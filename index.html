@@ -6,8 +6,6 @@
   <title>隨喜商行 Suihsi Market - 線上食材預約</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- Supabase JS Client -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -69,9 +67,12 @@
       <div class="p-4 flex-grow overflow-y-auto" id="cartItemsContainer"></div>
 
       <div class="p-4 bg-amber-50 border-t border-amber-200">
-        <div class="flex justify-between items-center text-lg font-bold text-gray-800 mb-3">
-          <span>預估總計金額：</span>
-          <span class="text-amber-700 text-xl" id="cartTotal">NT$ 0</span>
+        <div class="mb-3">
+          <div class="flex justify-between items-center text-lg font-bold text-gray-800">
+            <span>預估總計金額：</span>
+            <span class="text-amber-700 text-xl" id="cartTotal">NT$ 0</span>
+          </div>
+          <p class="text-[11px] text-amber-900/80 mt-1 text-right font-medium">＊以實際秤重價格為主，此總金額為參考用</p>
         </div>
 
         <form id="orderForm" onsubmit="submitOrder(event)" class="space-y-3">
@@ -401,10 +402,7 @@
       if (!localStorage.getItem('admin_pwd')) {
         localStorage.setItem('admin_pwd', 'admin888');
       }
-
       loadSiteLogo();
-
-      // 優先渲染前台與後台 UI，確保畫面絕對不空白
       renderCategories();
       renderProducts();
       updateCartUI();
@@ -476,6 +474,7 @@
       renderProducts();
     }
 
+    // 前台商品渲染
     function renderProducts() {
       const grid = document.getElementById('productGrid');
       products = JSON.parse(localStorage.getItem('sh_products')) || defaultProducts;
@@ -492,8 +491,8 @@
         const selectedUnitObj = cartItem ? { name: cartItem.unitName, price: cartItem.unitPrice } : null;
         
         const units = p.units && p.units.length > 0 ? p.units : [{ name: '斤', price: p.price || 0 }];
-        const displayPrice = p.isOnSite ? '現場計價' : (selectedUnitObj ? selectedUnitObj.price : units[0].price);
-        const displayUnitName = p.isOnSite ? '秤重/時價' : (selectedUnitObj ? selectedUnitObj.name : units[0].name);
+        const displayPrice = p.isOnSite ? '現場報價' : (selectedUnitObj ? selectedUnitObj.price : units[0].price);
+        const displayUnitName = p.isOnSite ? '時價/秤重' : (selectedUnitObj ? selectedUnitObj.name : units[0].name);
         const isSelectingUnit = selectingUnitProduct[p.id];
 
         const isWeightUnit = displayUnitName === '斤' || displayUnitName === '半斤';
@@ -557,7 +556,7 @@
       if (!product) return;
 
       if (product.isOnSite) {
-        confirmUnitAndAdd(id, '份/現場秤重', 0);
+        confirmUnitAndAdd(id, '時價/秤重', 0);
         return;
       }
 
@@ -596,6 +595,7 @@
       renderProducts();
     }
 
+    // 購物車與總金額計算邏輯（精準排除時價商品不計入自動總金額，並顯示加總格式）
     function updateCartUI() {
       const totalCount = cart.reduce((sum, item) => sum + 1, 0);
       document.getElementById('cartBadge').innerText = totalCount;
@@ -604,6 +604,7 @@
 
       const container = document.getElementById('cartItemsContainer');
       let totalAmount = 0;
+      let hasOnSiteItem = false;
 
       if (cart.length === 0) {
         container.innerHTML = `
@@ -617,10 +618,18 @@
       }
 
       container.innerHTML = cart.map(item => {
-        const itemTotal = Math.round(item.unitPrice * item.qty);
-        totalAmount += itemTotal;
         const isWeight = item.unitName === '斤' || item.unitName === '半斤';
         const step = isWeight ? 0.5 : 1;
+        
+        let itemTotalText = '';
+        if (item.isOnSite) {
+          hasOnSiteItem = true;
+          itemTotalText = '現場報價';
+        } else {
+          const itemTotal = Math.round(item.unitPrice * item.qty);
+          totalAmount += itemTotal;
+          itemTotalText = `NT$ ${itemTotal}`;
+        }
 
         return `
           <div class="flex items-center justify-between py-3 border-b border-gray-100">
@@ -634,13 +643,22 @@
                 <span class="px-2 text-xs font-bold">${item.qty} ${item.unitName}</span>
                 <button onclick="updateQty('${item.id}', ${step})" class="px-2 py-0.5 text-xs font-bold">+</button>
               </div>
-              <span class="font-bold text-amber-800 text-sm w-20 text-right">${item.isOnSite ? '現場報價' : `NT$ ${itemTotal}`}</span>
+              <span class="font-bold text-amber-800 text-sm w-20 text-right">${itemTotalText}</span>
             </div>
           </div>
         `;
       }).join('');
 
-      document.getElementById('cartTotal').innerText = totalAmount > 0 ? `NT$ ${totalAmount} + 現場計價商品` : '現場計價或 NT$ 0';
+      // 依照需求：顯示其他可計價總金額 + 時價
+      if (totalAmount > 0 && hasOnSiteItem) {
+        document.getElementById('cartTotal').innerText = `NT$ ${totalAmount} + 時價商品`;
+      } else if (totalAmount > 0 && !hasOnSiteItem) {
+        document.getElementById('cartTotal').innerText = `NT$ ${totalAmount}`;
+      } else if (totalAmount === 0 && hasOnSiteItem) {
+        document.getElementById('cartTotal').innerText = '現場報價 / 時價';
+      } else {
+        document.getElementById('cartTotal').innerText = 'NT$ 0';
+      }
     }
 
     function toggleCartModal() {
@@ -656,8 +674,12 @@
 
       let totalAmount = 0;
       cart.forEach(item => {
-        totalAmount += Math.round(item.unitPrice * item.qty);
+        if (!item.isOnSite) {
+          totalAmount += Math.round(item.unitPrice * item.qty);
+        }
       });
+
+      const orderTotalText = totalAmount > 0 ? `NT$ ${totalAmount} + 時價商品` : '現場報價/時價';
 
       const order = {
         id: 'ORD-' + Date.now().toString().slice(-6),
@@ -673,7 +695,7 @@
           internalCat: i.internalCat || '一般商品（不需特別備註）'
         })),
         items: cart.map(i => `${i.name} x ${i.qty}${i.unitName}${i.isOnSite ? '(現場)' : ''}`).join('、'),
-        total: totalAmount,
+        total: orderTotalText,
         status: '待處理'
       };
 
@@ -781,7 +803,7 @@
           </td>
           <td class="p-3 font-semibold text-amber-900">${o.pickupTime}</td>
           <td class="p-3 text-xs text-gray-700 max-w-xs">${o.items}</td>
-          <td class="p-3 font-bold text-amber-800">NT$ ${o.total}</td>
+          <td class="p-3 font-bold text-amber-800">${o.total.startsWith('NT$') || o.total.includes('時價') ? o.total : 'NT$ ' + o.total}</td>
           <td class="p-3">
             <span class="px-2 py-1 text-xs font-bold rounded-full ${o.status === '已完成' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
               ${o.status}
@@ -1102,15 +1124,3 @@
   </script>
 </body>
 </html>
-```
-
-### 操作說明：
-1. 請複製上面 **全部 HTML 內容**。
-2. 開啟你的專案檔案 `index.html`，把舊內容**全部覆蓋**貼上。
-3. 存檔後在終端機執行推送到 GitHub / Netlify：
-   ```bash
-   git add .
-   git commit -m "修正頁面無法顯示問題"
-   git push
-   ```
-4. 部署完成後重新整理網頁，商品與所有功能就會立刻出來了！
