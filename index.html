@@ -126,7 +126,7 @@
       <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
         <div class="flex items-center space-x-3">
           <i class="fa-solid fa-sliders text-amber-500 text-2xl"></i>
-          <h1 class="text-xl font-bold tracking-wide">隨喜商行 · 後台管理系統 (雲端同步中)</h1>
+          <h1 class="text-xl font-bold tracking-wide">隨喜商行 · 後台管理系統 (Supabase 雲端同步)</h1>
         </div>
         <button onclick="closeAdminPanel()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-xs font-bold transition">
           <i class="fa-solid fa-right-from-bracket"></i> 關閉後台返回前台
@@ -367,21 +367,18 @@
 
   <script>
     // ==================== Supabase 設定 ====================
-    const SUPABASE_URL = 'https://nshcuhvugdxrddfowdfq.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5zaGN1aHZ1Z2R4cmRkZm93ZGZxIiwicm9sZSI6ImFub24iLCJpYXkiwJj45MiIsInJ5cCI6IkpXVCJ9.BOMH8x8KqK-YOUR_SUPABASE_KEY_HERE'; // 這裡請確保換成你正確的 anon key
-    // 若上方 key 需帶入你專案正確的，請直接替換。為了安全以下提供標準初始化：
-    const supabaseClient = supabase.createClient(
-      'https://nshcuhvugdxrddfowdfq.supabase.co', 
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5zaGN1aHZ1Z2R4cmRkZm93ZGZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA2MTQ0OTIsImV4cCI6MjA4NjE5MDQ5Mn0.YOUR_ACTUAL_KEY'
-    );
+    const SUPABASE_URL = 'https://mwqrzcleywhlwmwvdhqi.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_DOkDS_DI_2xmKUMA6_zzCA_aNk2fw13';
+    
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     const defaultCategories = ['蔬菜', '肉類', '海鮮', '火鍋料', '麵粉乾貨', '水果'];
     const defaultProducts = [
-      { id: '1', name: '高麗菜', category: '蔬菜', internalCat: '老闆單', units: [{ name: '斤', price: 35, isOnSite: false }, { name: '半斤', price: 18, isOnSite: false }], desc: '高山產直脆甜', image: 'https://images.unsplash.com/photo-1594282486552-05b4d80fbb9f?w=400' },
-      { id: '2', name: '大白菜', category: '蔬菜', internalCat: '老闆單', units: [{ name: '斤', price: 28, isOnSite: false }], desc: '', image: 'https://images.unsplash.com/photo-1587049352847-4a222e784d38?w=400' },
-      { id: '3', name: '台灣五花肉', category: '肉類', internalCat: '老闆娘單', units: [{ name: '斤', price: 160, isOnSite: false }, { name: '半斤', price: 80, isOnSite: false }], desc: '每日溫體直送切塊', image: 'https://images.unsplash.com/photo-1602470520998-f4a52199a3d6?w=400' },
-      { id: '4', name: '活體大閘蟹', category: '海鮮', internalCat: '老闆娘單', units: [{ name: '隻', price: 0, isOnSite: true }, { name: '斤', price: 900, isOnSite: false }], desc: '時價秤重現場報價', image: 'https://images.unsplash.com/photo-1534483509719-3feaee7c30da?w=400' },
-      { id: '5', name: '手工蛋餃', category: '火鍋料', internalCat: '一般商品（不需特別備註）', units: [{ name: '包', price: 65, isOnSite: false }, { name: '盒', price: 120, isOnSite: false }], desc: '一包10入餡料飽滿', image: 'https://images.unsplash.com/photo-1541696432-82c6da8ce7bf?w=400' }
+      { id: 1, name: '高麗菜', category: '蔬菜', internalCat: '老闆單', units: [{ name: '斤', price: 35, isOnSite: false }, { name: '半斤', price: 18, isOnSite: false }], desc: '高山產直脆甜', image: 'https://images.unsplash.com/photo-1594282486552-05b4d80fbb9f?w=400' },
+      { id: 2, name: '大白菜', category: '蔬菜', internalCat: '老闆單', units: [{ name: '斤', price: 28, isOnSite: false }], desc: '', image: 'https://images.unsplash.com/photo-1587049352847-4a222e784d38?w=400' },
+      { id: 3, name: '台灣五花肉', category: '肉類', internalCat: '老闆娘單', units: [{ name: '斤', price: 160, isOnSite: false }, { name: '半斤', price: 80, isOnSite: false }], desc: '每日溫體直送切塊', image: 'https://images.unsplash.com/photo-1602470520998-f4a52199a3d6?w=400' },
+      { id: 4, name: '活體大閘蟹', category: '海鮮', internalCat: '老闆娘單', units: [{ name: '隻', price: 0, isOnSite: true }, { name: '斤', price: 900, isOnSite: false }], desc: '時價秤重現場報價', image: 'https://images.unsplash.com/photo-1534483509719-3feaee7c30da?w=400' },
+      { id: 5, name: '手工蛋餃', category: '火鍋料', internalCat: '一般商品（不需特別備註）', units: [{ name: '包', price: 65, isOnSite: false }, { name: '盒', price: 120, isOnSite: false }], desc: '一包10入餡料飽滿', image: 'https://images.unsplash.com/photo-1541696432-82c6da8ce7bf?w=400' }
     ];
 
     let categories = [];
@@ -416,7 +413,6 @@
           categories = catData.map(c => c.name);
         } else {
           categories = defaultCategories;
-          // 初始化雲端
           for (let c of defaultCategories) {
             await supabaseClient.from('categories').insert([{ name: c }]);
           }
@@ -426,7 +422,7 @@
         const { data: prodData } = await supabaseClient.from('products').select('*');
         if (prodData && prodData.length > 0) {
           products = prodData.map(p => ({
-            id: p.id.toString(),
+            id: p.id,
             name: p.name,
             category: p.category,
             internalCat: p.internal_cat || '一般商品（不需特別備註）',
@@ -543,7 +539,7 @@
       }
 
       grid.innerHTML = filtered.map(p => {
-        const cartItem = cart.find(item => item.id === p.id);
+        const cartItem = cart.find(item => item.id == p.id);
         const qty = cartItem ? cartItem.qty : 0;
         const selectedUnitObj = cartItem ? { name: cartItem.unitName, price: cartItem.unitPrice, isOnSite: cartItem.isOnSite } : null;
         
@@ -609,7 +605,7 @@
     }
 
     function handleFirstClick(id) {
-      const product = products.find(p => p.id === id);
+      const product = products.find(p => p.id == id);
       if (!product) return;
 
       const units = product.units && product.units.length > 0 ? product.units : [{ name: '斤', price: 0, isOnSite: false }];
@@ -622,7 +618,7 @@
     }
 
     function confirmUnitAndAdd(id, unitName, unitPrice, isOnSite) {
-      const product = products.find(p => p.id === id);
+      const product = products.find(p => p.id == id);
       if (!product) return;
 
       selectingUnitProduct[id] = false;
@@ -635,11 +631,11 @@
     }
 
     function updateQty(id, change) {
-      let item = cart.find(i => i.id === id);
+      let item = cart.find(i => i.id == id);
       if (item) {
         item.qty = Math.max(0, Math.round((item.qty + change) * 10) / 10);
         if (item.qty === 0) {
-          cart = cart.filter(i => i.id !== id);
+          cart = cart.filter(i => i.id != id);
         }
       }
       updateCartUI();
@@ -1034,8 +1030,8 @@
         units
       };
 
-      if (id) {
-        await supabaseClient.from('products').update(productObj).eq('id', id);
+      if (id && id !== '') {
+        await supabaseClient.from('products').update(productObj).eq('id', Number(id));
       } else {
         await supabaseClient.from('products').insert([productObj]);
       }
@@ -1047,7 +1043,7 @@
     }
 
     function editProduct(id) {
-      const p = products.find(prod => prod.id === id);
+      const p = products.find(prod => prod.id == id);
       if (!p) return;
 
       const catSelect = document.getElementById('prodCategory');
@@ -1071,7 +1067,7 @@
 
     async function deleteProduct(id) {
       if (confirm('確定要刪除此食材嗎？')) {
-        await supabaseClient.from('products').delete().eq('id', id);
+        await supabaseClient.from('products').delete().eq('id', Number(id));
         await fetchCloudData();
         renderProductsAdmin();
         renderProducts();
