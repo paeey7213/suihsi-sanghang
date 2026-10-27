@@ -346,10 +346,10 @@
           </label>
         </div>
 
-        <!-- 單位與價格設定區 -->
+        <!-- 單位與價格設定區（取消隱鎖，讓現場計價商品也能自訂顯示單位名稱） -->
         <div id="unitPricingContainer" class="bg-gray-50 p-3 rounded-lg border space-y-3">
           <div class="flex justify-between items-center">
-            <label class="block text-xs font-bold text-gray-700">單位與價格設定</label>
+            <label class="block text-xs font-bold text-gray-700">單位與價格設定（現場計價商品價格填 0 即可）</label>
             <button type="button" onclick="addUnitRow()" class="text-xs bg-amber-800 text-white px-2 py-1 rounded font-bold hover:bg-amber-900">
               <i class="fa-solid fa-plus text-[10px]"></i> 新增單位
             </button>
@@ -378,7 +378,7 @@
       { id: '1', name: '高麗菜', category: '蔬菜', internalCat: '老闆單', isOnSite: false, units: [{ name: '斤', price: 35 }, { name: '半斤', price: 18 }], desc: '高山產直脆甜', image: 'https://images.unsplash.com/photo-1594282486552-05b4d80fbb9f?w=400' },
       { id: '2', name: '大白菜', category: '蔬菜', internalCat: '老闆單', isOnSite: false, units: [{ name: '斤', price: 28 }], desc: '', image: 'https://images.unsplash.com/photo-1587049352847-4a222e784d38?w=400' },
       { id: '3', name: '台灣五花肉', category: '肉類', internalCat: '老闆娘單', isOnSite: false, units: [{ name: '斤', price: 160 }, { name: '半斤', price: 80 }], desc: '每日溫體直送切塊', image: 'https://images.unsplash.com/photo-1602470520998-f4a52199a3d6?w=400' },
-      { id: '4', name: '活體大閘蟹', category: '海鮮', internalCat: '老闆娘單', isOnSite: true, units: [], desc: '時價秤重現場報價', image: 'https://images.unsplash.com/photo-1534483509719-3feaee7c30da?w=400' },
+      { id: '4', name: '活體大閘蟹', category: '海鮮', internalCat: '老闆娘單', isOnSite: true, units: [{ name: '份/時價', price: 0 }], desc: '時價秤重現場報價', image: 'https://images.unsplash.com/photo-1534483509719-3feaee7c30da?w=400' },
       { id: '5', name: '手工蛋餃', category: '火鍋料', internalCat: '一般商品（不需特別備註）', isOnSite: false, units: [{ name: '包', price: 65 }, { name: '盒', price: 120 }], desc: '一包10入餡料飽滿', image: 'https://images.unsplash.com/photo-1541696432-82c6da8ce7bf?w=400' }
     ];
 
@@ -474,7 +474,6 @@
       renderProducts();
     }
 
-    // 前台商品渲染
     function renderProducts() {
       const grid = document.getElementById('productGrid');
       products = JSON.parse(localStorage.getItem('sh_products')) || defaultProducts;
@@ -492,10 +491,10 @@
         
         const units = p.units && p.units.length > 0 ? p.units : [{ name: '斤', price: p.price || 0 }];
         const displayPrice = p.isOnSite ? '現場報價' : (selectedUnitObj ? selectedUnitObj.price : units[0].price);
-        const displayUnitName = p.isOnSite ? '時價/秤重' : (selectedUnitObj ? selectedUnitObj.name : units[0].name);
+        const displayUnitName = p.isOnSite ? (selectedUnitObj ? selectedUnitObj.name : (units[0] ? units[0].name : '份')) : (selectedUnitObj ? selectedUnitObj.name : units[0].name);
         const isSelectingUnit = selectingUnitProduct[p.id];
 
-        const isWeightUnit = displayUnitName === '斤' || displayUnitName === '半斤';
+        const isWeightUnit = displayUnitName.includes('斤');
         const step = isWeightUnit ? 0.5 : 1;
 
         return `
@@ -528,13 +527,13 @@
                   <span class="font-bold text-amber-900 text-sm">${qty} ${displayUnitName}</span>
                   <button onclick="updateQty('${p.id}', ${step})" class="w-8 h-8 rounded-md bg-white border border-gray-300 flex items-center justify-center font-bold text-amber-900 shadow-sm">+</button>
                 </div>
-              ` : isSelectingUnit && !p.isOnSite ? `
+              ` : isSelectingUnit ? `
                 <div class="bg-amber-50 p-2 rounded-lg border border-amber-200 text-center space-y-1.5">
                   <p class="text-[10px] font-bold text-amber-900">請先選擇計價單位：</p>
                   <div class="flex flex-wrap gap-1 justify-center">
                     ${units.map(u => `
                       <button onclick="confirmUnitAndAdd('${p.id}', '${u.name}', ${u.price})" class="px-2.5 py-1 bg-amber-800 hover:bg-amber-900 text-white rounded text-xs font-bold transition shadow-sm">
-                        ${u.name} ($${u.price})
+                        ${u.name} ${p.isOnSite ? '' : `($${u.price})`}
                       </button>
                     `).join('')}
                   </div>
@@ -555,12 +554,7 @@
       const product = products.find(p => p.id === id);
       if (!product) return;
 
-      if (product.isOnSite) {
-        confirmUnitAndAdd(id, '時價/秤重', 0);
-        return;
-      }
-
-      const units = product.units && product.units.length > 0 ? product.units : [{ name: '斤', price: product.price || 0 }];
+      const units = product.units && product.units.length > 0 ? product.units : [{ name: product.isOnSite ? '份' : '斤', price: 0 }];
       if (units.length === 1) {
         confirmUnitAndAdd(id, units[0].name, units[0].price);
       } else {
@@ -575,7 +569,7 @@
       if (!product) return;
 
       selectingUnitProduct[id] = false;
-      const isWeight = unitName === '斤' || unitName === '半斤';
+      const isWeight = unitName.includes('斤');
       const initialQty = isWeight ? 0.5 : 1;
 
       cart.push({ ...product, qty: initialQty, unitName, unitPrice });
@@ -595,7 +589,6 @@
       renderProducts();
     }
 
-    // 購物車與總金額計算邏輯（精準排除時價商品不計入自動總金額，並顯示加總格式）
     function updateCartUI() {
       const totalCount = cart.reduce((sum, item) => sum + 1, 0);
       document.getElementById('cartBadge').innerText = totalCount;
@@ -618,7 +611,7 @@
       }
 
       container.innerHTML = cart.map(item => {
-        const isWeight = item.unitName === '斤' || item.unitName === '半斤';
+        const isWeight = item.unitName.includes('斤');
         const step = isWeight ? 0.5 : 1;
         
         let itemTotalText = '';
@@ -649,7 +642,6 @@
         `;
       }).join('');
 
-      // 依照需求：顯示其他可計價總金額 + 時價
       if (totalAmount > 0 && hasOnSiteItem) {
         document.getElementById('cartTotal').innerText = `NT$ ${totalAmount} + 時價商品`;
       } else if (totalAmount > 0 && !hasOnSiteItem) {
@@ -871,7 +863,7 @@
       products = JSON.parse(localStorage.getItem('sh_products')) || defaultProducts;
 
       tbody.innerHTML = products.map(p => {
-        const unitDisplay = p.isOnSite ? '<span class="text-blue-600 font-bold">現場計價（秤重報價）</span>' : (p.units || []).map(u => `${u.name}: $${u.price}`).join('、');
+        const unitDisplay = (p.units || []).map(u => `${u.name}${p.isOnSite ? '' : ': $' + u.price}`).join('、');
         return `
           <tr class="border-b hover:bg-gray-50">
             <td class="p-3">
@@ -883,7 +875,7 @@
             </td>
             <td class="p-3"><span class="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-xs font-semibold">${p.category}</span></td>
             <td class="p-3"><span class="bg-amber-100 text-amber-900 px-2 py-0.5 rounded text-xs font-bold">${p.internalCat || '一般商品'}</span></td>
-            <td class="p-3 text-xs">${unitDisplay}</td>
+            <td class="p-3 text-xs">${unitDisplay} ${p.isOnSite ? '<span class="text-blue-600 font-bold ml-1">(現場計價)</span>' : ''}</td>
             <td class="p-3 text-right space-x-2">
               <button onclick="editProduct('${p.id}')" class="text-xs bg-amber-100 hover:bg-amber-200 text-amber-900 px-2.5 py-1 rounded font-bold transition">編輯</button>
               <button onclick="deleteProduct('${p.id}')" class="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-2.5 py-1 rounded font-bold transition">刪除</button>
@@ -894,9 +886,7 @@
     }
 
     function toggleOnSitePricing(checkbox) {
-      const container = document.getElementById('unitPricingContainer');
-      container.style.opacity = checkbox.checked ? '0.4' : '1';
-      container.style.pointerEvents = checkbox.checked ? 'none' : 'auto';
+      // 保持開放，讓使用者可以自訂現場計價商品的單位名稱（例如：斤、份、隻等）
     }
 
     function addUnitRow(name = '', price = '') {
@@ -904,7 +894,7 @@
       const div = document.createElement('div');
       div.className = 'flex items-center space-x-2 unit-row';
       div.innerHTML = `
-        <input type="text" placeholder="單位 (如: 斤, 包)" value="${name}" class="unit-name-input w-1/2 px-2 py-1.5 border rounded text-xs outline-none" required>
+        <input type="text" placeholder="單位 (如: 斤, 包, 份)" value="${name}" class="unit-name-input w-1/2 px-2 py-1.5 border rounded text-xs outline-none" required>
         <input type="number" min="0" placeholder="價格 ($)" value="${price}" class="unit-price-input w-1/2 px-2 py-1.5 border rounded text-xs outline-none" required>
         <button type="button" onclick="this.parentElement.remove()" class="text-red-500 hover:text-red-700 font-bold px-1">&times;</button>
       `;
@@ -918,7 +908,6 @@
       document.getElementById('prodDesc').value = '';
       document.getElementById('prodInternalCat').value = '一般商品（不需特別備註）';
       document.getElementById('prodIsOnSitePricing').checked = false;
-      toggleOnSitePricing(document.getElementById('prodIsOnSitePricing'));
       
       const catSelect = document.getElementById('prodCategory');
       categories = JSON.parse(localStorage.getItem('sh_categories')) || defaultCategories;
@@ -974,14 +963,12 @@
 
       const unitRows = document.querySelectorAll('.unit-row');
       const units = [];
-      if (!isOnSite) {
-        unitRows.forEach(row => {
-          const uName = row.querySelector('.unit-name-input').value.trim();
-          const uPrice = parseFloat(row.querySelector('.unit-price-input').value);
-          if (uName && !isNaN(uPrice)) { units.push({ name: uName, price: uPrice }); }
-        });
-        if (units.length === 0) { alert('非現場計價商品請至少新增一個單位與價格！'); return; }
-      }
+      unitRows.forEach(row => {
+        const uName = row.querySelector('.unit-name-input').value.trim();
+        const uPrice = parseFloat(row.querySelector('.unit-price-input').value);
+        if (uName && !isNaN(uPrice)) { units.push({ name: uName, price: uPrice }); }
+      });
+      if (units.length === 0) { alert('請至少新增一個單位與價格！'); return; }
 
       const finalImage = currentUploadedImageBase64 || imageUrlInput || 'https://via.placeholder.com/300x200?text=新鮮食材';
 
@@ -1012,12 +999,11 @@
       document.getElementById('prodCategory').value = p.category;
       document.getElementById('prodInternalCat').value = p.internalCat || '一般商品（不需特別備註）';
       document.getElementById('prodIsOnSitePricing').checked = p.isOnSite || false;
-      toggleOnSitePricing(document.getElementById('prodIsOnSitePricing'));
       document.getElementById('prodImageUrl').value = p.image.startsWith('data:') ? '' : p.image;
 
       const container = document.getElementById('unitRowsContainer');
       container.innerHTML = '';
-      const units = p.units && p.units.length > 0 ? p.units : [{ name: '斤', price: p.price || 0 }];
+      const units = p.units && p.units.length > 0 ? p.units : [{ name: '斤', price: 0 }];
       units.forEach(u => addUnitRow(u.name, u.price));
 
       document.getElementById('modalTitle').innerText = '編輯食材品項';
