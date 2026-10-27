@@ -6,8 +6,6 @@
   <title>隨喜商行 Suihsi Market - 線上食材預約</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- 引入 Supabase JS SDK -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -371,11 +369,6 @@
   </div>
 
   <script>
-    // Supabase 設定
-    const SUPABASE_URL = 'https://mwqrzcleywhlwmwvdhqi.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_DOkDS_DI_2xmKUMA6_zzCA_aNk2fw13';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
     const defaultCategories = ['蔬菜', '肉類', '海鮮', '火鍋料', '麵粉乾貨', '水果'];
 
     const defaultProducts = [
@@ -388,7 +381,7 @@
 
     let categories = JSON.parse(localStorage.getItem('sh_categories')) || defaultCategories;
     let products = JSON.parse(localStorage.getItem('sh_products')) || defaultProducts;
-    let orders = [];
+    let orders = JSON.parse(localStorage.getItem('sh_orders')) || [];
     let cart = [];
     let selectingUnitProduct = {};
     let currentCategory = '全部';
@@ -407,53 +400,12 @@
         localStorage.setItem('admin_pwd', 'admin888');
       }
       loadSiteLogo();
-      
-      // 先渲染本地分類與商品，確保畫面絕對不會空白
       renderCategories();
       renderProducts();
       updateCartUI();
       renderOrders();
       renderProductsAdmin();
       renderCategoriesAdmin();
-
-      // 在背景默默去抓 Supabase 雲端訂單與即時更新
-      fetchOrdersFromSupabase();
-
-      // 即時監聽 Supabase 訂單變化 (Realtime)
-      supabase
-        .channel('public:orders')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, payload => {
-          console.log('收到資料庫即時更新：', payload);
-          fetchOrdersFromSupabase();
-        })
-        .subscribe();
-    }
-
-    // 從 Supabase 讀取訂單
-    async function fetchOrdersFromSupabase() {
-      const { data, error } = await supabase
-        .from('orders')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('讀取雲端訂單失敗，改用本地缓存', error);
-        orders = JSON.parse(localStorage.getItem('sh_orders')) || [];
-      } else {
-        orders = data.map(o => ({
-          id: o.order_id,
-          date: o.date,
-          custName: o.cust_name,
-          custPhone: o.cust_phone,
-          pickupTime: o.pickup_time,
-          rawItems: o.raw_items,
-          items: o.items,
-          total: o.total,
-          status: o.status
-        }));
-        localStorage.setItem('sh_orders', JSON.stringify(orders));
-      }
-      renderOrders();
     }
 
     function loadSiteLogo() {
@@ -690,8 +642,7 @@
       document.getElementById('cartModal').classList.toggle('hidden');
     }
 
-    // 提交訂單同步寫入 Supabase
-    async function submitOrder(e) {
+    function submitOrder(e) {
       e.preventDefault();
       if (cart.length === 0) {
         alert('您的預約清單是空的！');
@@ -703,14 +654,13 @@
         totalAmount += Math.round(item.unitPrice * item.qty);
       });
 
-      const orderId = 'ORD-' + Date.now().toString().slice(-6);
-      const newOrderData = {
-        order_id: orderId,
+      const order = {
+        id: 'ORD-' + Date.now().toString().slice(-6),
         date: new Date().toLocaleString('zh-TW'),
-        cust_name: document.getElementById('custName').value,
-        cust_phone: document.getElementById('custPhone').value,
-        pickup_time: document.getElementById('pickupTime').value,
-        raw_items: cart.map(i => ({
+        custName: document.getElementById('custName').value,
+        custPhone: document.getElementById('custPhone').value,
+        pickupTime: document.getElementById('pickupTime').value,
+        rawItems: cart.map(i => ({
           name: i.name,
           qty: i.qty,
           unitName: i.unitName,
@@ -718,24 +668,21 @@
           internalCat: i.internalCat || '一般商品（不需特別備註）'
         })),
         items: cart.map(i => `${i.name} x ${i.qty}${i.unitName}${i.isOnSite ? '(現場)' : ''}`).join('、'),
-        total: totalAmount.toString(),
+        total: totalAmount,
         status: '待處理'
       };
 
-      const { error } = await supabase.from('orders').insert([newOrderData]);
+      orders = JSON.parse(localStorage.getItem('sh_orders')) || [];
+      orders.unshift(order);
+      localStorage.setItem('sh_orders', JSON.stringify(orders));
 
-      if (error) {
-        alert('送出訂單失敗：' + error.message);
-        console.error(error);
-      } else {
-        alert('感謝您的預約！我們已收到您的訂單。');
-        cart = [];
-        updateCartUI();
-        renderProducts();
-        toggleCartModal();
-        document.getElementById('orderForm').reset();
-        await fetchOrdersFromSupabase();
-      }
+      alert('感謝您的預約！我們已收到您的訂單。');
+      cart = [];
+      updateCartUI();
+      renderProducts();
+      toggleCartModal();
+      document.getElementById('orderForm').reset();
+      renderOrders();
     }
 
     // Admin Functions
@@ -754,7 +701,7 @@
       if (pwd === savedPwd) {
         closeAdminLogin();
         document.getElementById('adminPanelModal').classList.remove('hidden');
-        fetchOrdersFromSupabase();
+        renderOrders();
         renderProductsAdmin();
         renderCategoriesAdmin();
       } else {
@@ -783,31 +730,27 @@
       checkboxes.forEach(cb => cb.checked = source.checked);
     }
 
-    async function deleteSelectedOrders() {
+    function deleteSelectedOrders() {
       const selectedIds = Array.from(document.querySelectorAll('.order-checkbox:checked')).map(cb => cb.value);
       if (selectedIds.length === 0) {
         alert('請先勾選要刪除的訂單！');
         return;
       }
       if (confirm(`確定要刪除勾選的 ${selectedIds.length} 筆訂單嗎？`)) {
-        const { error } = await supabase.from('orders').delete().in('order_id', selectedIds);
-        if (error) {
-          alert('刪除失敗：' + error.message);
-        } else {
-          await fetchOrdersFromSupabase();
-          document.getElementById('selectAllOrders').checked = false;
-        }
+        orders = JSON.parse(localStorage.getItem('sh_orders')) || [];
+        orders = orders.filter(o => !selectedIds.includes(o.id));
+        localStorage.setItem('sh_orders', JSON.stringify(orders));
+        renderOrders();
+        document.getElementById('selectAllOrders').checked = false;
       }
     }
 
-    async function deleteOrder(id) {
+    function deleteOrder(id) {
       if (confirm('確定要刪除這筆訂單嗎？')) {
-        const { error } = await supabase.from('orders').delete().eq('order_id', id);
-        if (error) {
-          alert('刪除失敗：' + error.message);
-        } else {
-          await fetchOrdersFromSupabase();
-        }
+        orders = JSON.parse(localStorage.getItem('sh_orders')) || [];
+        orders = orders.filter(o => o.id !== id);
+        localStorage.setItem('sh_orders', JSON.stringify(orders));
+        renderOrders();
       }
     }
 
@@ -1064,17 +1007,13 @@
       }
     }
 
-    async function toggleOrderStatus(id) {
+    function toggleOrderStatus(id) {
       orders = JSON.parse(localStorage.getItem('sh_orders')) || [];
       const order = orders.find(o => o.id === id);
       if (order) {
-        const newStatus = order.status === '待處理' ? '已完成' : '待處理';
-        const { error } = await supabase.from('orders').update({ status: newStatus }).eq('order_id', id);
-        if (error) {
-          alert('更新狀態失敗：' + error.message);
-        } else {
-          await fetchOrdersFromSupabase();
-        }
+        order.status = order.status === '待處理' ? '已完成' : '待處理';
+        localStorage.setItem('sh_orders', JSON.stringify(orders));
+        renderOrders();
       }
     }
 
@@ -1095,7 +1034,7 @@
       if (type === 'all') {
         let csvContent = "\uFEFF訂單編號,訂購時間,顧客姓名,聯絡電話,取貨時間,訂購食材摘要,總金額,訂單狀態\n";
         targetOrders.forEach(o => {
-          const row = [`"${o.id}"`, `"${o.date}"`, `"${o.custName}"`, `"${o.custPhone}"`, `"${o.pickupTime}"`, `"${o.items.replace(/"/g, '""')}"`, `"NT$ ${o.total}"`, `"${o.status}"`];
+          const row = [`"${o.id}"`, `"${o.date}"`, `"${o.custName}"`, `"${o.custPhone}"`, `"${o.pickupTime}"`, `"${o.items.replace(/"/g, '""')}"`, `"${o.total}"`, `"${o.status}"`];
           csvContent += row.join(",") + "\n";
         });
 
