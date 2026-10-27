@@ -203,7 +203,7 @@
                 <th class="p-3">品名與備註</th>
                 <th class="p-3">前台分類</th>
                 <th class="p-3">內部生產分類</th>
-                <th class="p-3">單位與價格 / 現場計價</th>
+                <th class="p-3">單位與價格 / 時價設定</th>
                 <th class="p-3 text-right">操作</th>
               </tr>
             </thead>
@@ -338,18 +338,10 @@
           </div>
         </div>
 
-        <!-- 現場計價勾選區 -->
-        <div class="bg-amber-50 p-3 rounded-lg border border-amber-200">
-          <label class="flex items-center space-x-2 cursor-pointer">
-            <input type="checkbox" id="prodIsOnSitePricing" onchange="toggleOnSitePricing(this)" class="w-4 h-4 text-amber-800 rounded">
-            <span class="text-xs font-bold text-amber-900">設為「現場計價」（依實際秤重/現場報價，線上不計價）</span>
-          </label>
-        </div>
-
-        <!-- 單位與價格設定區（取消隱鎖，讓現場計價商品也能自訂顯示單位名稱） -->
-        <div id="unitPricingContainer" class="bg-gray-50 p-3 rounded-lg border space-y-3">
+        <!-- 單位與價格設定區（每個單位可自由設定名稱、價格，並可勾選是否為時價/現場報價） -->
+        <div class="bg-gray-50 p-3 rounded-lg border space-y-3">
           <div class="flex justify-between items-center">
-            <label class="block text-xs font-bold text-gray-700">單位與價格設定（現場計價商品價格填 0 即可）</label>
+            <label class="block text-xs font-bold text-gray-700">單位與價格設定（可勾選時價/現場報價）</label>
             <button type="button" onclick="addUnitRow()" class="text-xs bg-amber-800 text-white px-2 py-1 rounded font-bold hover:bg-amber-900">
               <i class="fa-solid fa-plus text-[10px]"></i> 新增單位
             </button>
@@ -375,11 +367,11 @@
     const defaultCategories = ['蔬菜', '肉類', '海鮮', '火鍋料', '麵粉乾貨', '水果'];
 
     const defaultProducts = [
-      { id: '1', name: '高麗菜', category: '蔬菜', internalCat: '老闆單', isOnSite: false, units: [{ name: '斤', price: 35 }, { name: '半斤', price: 18 }], desc: '高山產直脆甜', image: 'https://images.unsplash.com/photo-1594282486552-05b4d80fbb9f?w=400' },
-      { id: '2', name: '大白菜', category: '蔬菜', internalCat: '老闆單', isOnSite: false, units: [{ name: '斤', price: 28 }], desc: '', image: 'https://images.unsplash.com/photo-1587049352847-4a222e784d38?w=400' },
-      { id: '3', name: '台灣五花肉', category: '肉類', internalCat: '老闆娘單', isOnSite: false, units: [{ name: '斤', price: 160 }, { name: '半斤', price: 80 }], desc: '每日溫體直送切塊', image: 'https://images.unsplash.com/photo-1602470520998-f4a52199a3d6?w=400' },
-      { id: '4', name: '活體大閘蟹', category: '海鮮', internalCat: '老闆娘單', isOnSite: true, units: [{ name: '份/時價', price: 0 }], desc: '時價秤重現場報價', image: 'https://images.unsplash.com/photo-1534483509719-3feaee7c30da?w=400' },
-      { id: '5', name: '手工蛋餃', category: '火鍋料', internalCat: '一般商品（不需特別備註）', isOnSite: false, units: [{ name: '包', price: 65 }, { name: '盒', price: 120 }], desc: '一包10入餡料飽滿', image: 'https://images.unsplash.com/photo-1541696432-82c6da8ce7bf?w=400' }
+      { id: '1', name: '高麗菜', category: '蔬菜', internalCat: '老闆單', units: [{ name: '斤', price: 35, isOnSite: false }, { name: '半斤', price: 18, isOnSite: false }], desc: '高山產直脆甜', image: 'https://images.unsplash.com/photo-1594282486552-05b4d80fbb9f?w=400' },
+      { id: '2', name: '大白菜', category: '蔬菜', internalCat: '老闆單', units: [{ name: '斤', price: 28, isOnSite: false }], desc: '', image: 'https://images.unsplash.com/photo-1587049352847-4a222e784d38?w=400' },
+      { id: '3', name: '台灣五花肉', category: '肉類', internalCat: '老闆娘單', units: [{ name: '斤', price: 160, isOnSite: false }, { name: '半斤', price: 80, isOnSite: false }], desc: '每日溫體直送切塊', image: 'https://images.unsplash.com/photo-1602470520998-f4a52199a3d6?w=400' },
+      { id: '4', name: '活體大閘蟹', category: '海鮮', internalCat: '老闆娘單', units: [{ name: '隻', price: 0, isOnSite: true }, { name: '斤', price: 900, isOnSite: false }], desc: '時價秤重現場報價', image: 'https://images.unsplash.com/photo-1534483509719-3feaee7c30da?w=400' },
+      { id: '5', name: '手工蛋餃', category: '火鍋料', internalCat: '一般商品（不需特別備註）', units: [{ name: '包', price: 65, isOnSite: false }, { name: '盒', price: 120, isOnSite: false }], desc: '一包10入餡料飽滿', image: 'https://images.unsplash.com/photo-1541696432-82c6da8ce7bf?w=400' }
     ];
 
     let categories = JSON.parse(localStorage.getItem('sh_categories')) || defaultCategories;
@@ -389,7 +381,6 @@
     let selectingUnitProduct = {};
     let currentCategory = '全部';
     let currentUploadedImageBase64 = '';
-    let currentUploadedLogoBase64 = '';
     let exportMode = 'batch';
 
     function init() {
@@ -487,11 +478,13 @@
       grid.innerHTML = filtered.map(p => {
         const cartItem = cart.find(item => item.id === p.id);
         const qty = cartItem ? cartItem.qty : 0;
-        const selectedUnitObj = cartItem ? { name: cartItem.unitName, price: cartItem.unitPrice } : null;
+        const selectedUnitObj = cartItem ? { name: cartItem.unitName, price: cartItem.unitPrice, isOnSite: cartItem.isOnSite } : null;
         
-        const units = p.units && p.units.length > 0 ? p.units : [{ name: '斤', price: p.price || 0 }];
-        const displayPrice = p.isOnSite ? '現場報價' : (selectedUnitObj ? selectedUnitObj.price : units[0].price);
-        const displayUnitName = p.isOnSite ? (selectedUnitObj ? selectedUnitObj.name : (units[0] ? units[0].name : '份')) : (selectedUnitObj ? selectedUnitObj.name : units[0].name);
+        const units = p.units && p.units.length > 0 ? p.units : [{ name: '斤', price: p.price || 0, isOnSite: false }];
+        const currentActiveUnit = selectedUnitObj || units[0];
+        
+        const displayPrice = currentActiveUnit.isOnSite ? '現場報價' : `NT$ ${currentActiveUnit.price}`;
+        const displayUnitName = currentActiveUnit.name;
         const isSelectingUnit = selectingUnitProduct[p.id];
 
         const isWeightUnit = displayUnitName.includes('斤');
@@ -503,7 +496,6 @@
               <div class="h-36 w-full bg-gray-100 relative">
                 <img src="${p.image}" alt="${p.name}" class="w-full h-full object-cover" onerror="this.src='https://via.placeholder.com/300x200?text=新鮮食材'">
                 <span class="absolute top-2 left-2 bg-amber-800/80 text-white text-xs px-2 py-0.5 rounded-full backdrop-blur-sm">${p.category}</span>
-                ${p.isOnSite ? '<span class="absolute top-2 right-2 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full font-bold">現場計價</span>' : ''}
               </div>
               <div class="p-3">
                 <h3 class="font-bold text-gray-800 text-base">${p.name}</h3>
@@ -515,7 +507,7 @@
                 ` : ''}
 
                 <div class="mt-2 text-amber-800 font-extrabold text-lg">
-                  ${p.isOnSite ? '現場報價' : `NT$ ${displayPrice}`} <span class="text-xs font-normal text-gray-500">/ ${displayUnitName}</span>
+                  ${displayPrice} <span class="text-xs font-normal text-gray-500">/ ${displayUnitName}</span>
                 </div>
               </div>
             </div>
@@ -532,15 +524,15 @@
                   <p class="text-[10px] font-bold text-amber-900">請先選擇計價單位：</p>
                   <div class="flex flex-wrap gap-1 justify-center">
                     ${units.map(u => `
-                      <button onclick="confirmUnitAndAdd('${p.id}', '${u.name}', ${u.price})" class="px-2.5 py-1 bg-amber-800 hover:bg-amber-900 text-white rounded text-xs font-bold transition shadow-sm">
-                        ${u.name} ${p.isOnSite ? '' : `($${u.price})`}
+                      <button onclick="confirmUnitAndAdd('${p.id}', '${u.name}', ${u.price}, ${u.isOnSite})" class="px-2.5 py-1 bg-amber-800 hover:bg-amber-900 text-white rounded text-xs font-bold transition shadow-sm">
+                        ${u.name} ${u.isOnSite ? '(時價)' : `($${u.price})`}
                       </button>
                     `).join('')}
                   </div>
                 </div>
               ` : `
                 <button onclick="handleFirstClick('${p.id}')" class="w-full bg-amber-800 hover:bg-amber-900 text-white font-bold py-2 rounded-lg text-sm transition flex items-center justify-center gap-1 shadow-sm mt-2">
-                  <i class="fa-solid fa-plus text-xs"></i> ${p.isOnSite ? '加入現場計價預約' : '加入預約'}
+                  <i class="fa-solid fa-plus text-xs"></i> 加入預約
                 </button>
               `}
             </div>
@@ -554,16 +546,16 @@
       const product = products.find(p => p.id === id);
       if (!product) return;
 
-      const units = product.units && product.units.length > 0 ? product.units : [{ name: product.isOnSite ? '份' : '斤', price: 0 }];
+      const units = product.units && product.units.length > 0 ? product.units : [{ name: '斤', price: 0, isOnSite: false }];
       if (units.length === 1) {
-        confirmUnitAndAdd(id, units[0].name, units[0].price);
+        confirmUnitAndAdd(id, units[0].name, units[0].price, units[0].isOnSite);
       } else {
         selectingUnitProduct[id] = true;
         renderProducts();
       }
     }
 
-    function confirmUnitAndAdd(id, unitName, unitPrice) {
+    function confirmUnitAndAdd(id, unitName, unitPrice, isOnSite) {
       products = JSON.parse(localStorage.getItem('sh_products')) || defaultProducts;
       const product = products.find(p => p.id === id);
       if (!product) return;
@@ -572,7 +564,7 @@
       const isWeight = unitName.includes('斤');
       const initialQty = isWeight ? 0.5 : 1;
 
-      cart.push({ ...product, qty: initialQty, unitName, unitPrice });
+      cart.push({ ...product, qty: initialQty, unitName, unitPrice, isOnSite });
       updateCartUI();
       renderProducts();
     }
@@ -617,7 +609,7 @@
         let itemTotalText = '';
         if (item.isOnSite) {
           hasOnSiteItem = true;
-          itemTotalText = '現場報價';
+          itemTotalText = '時價報價';
         } else {
           const itemTotal = Math.round(item.unitPrice * item.qty);
           totalAmount += itemTotal;
@@ -627,7 +619,7 @@
         return `
           <div class="flex items-center justify-between py-3 border-b border-gray-100">
             <div class="flex-1 pr-2">
-              <h4 class="font-bold text-gray-800 text-sm">${item.name} (${item.unitName}) ${item.isOnSite ? '<span class="text-blue-600 text-xs">(現場計價)</span>' : ''}</h4>
+              <h4 class="font-bold text-gray-800 text-sm">${item.name} (${item.unitName}) ${item.isOnSite ? '<span class="text-blue-600 text-xs">(時價)</span>' : ''}</h4>
               <p class="text-xs text-gray-500">${item.isOnSite ? '現場報價' : `NT$ ${item.unitPrice} / ${item.unitName}`}</p>
             </div>
             <div class="flex items-center space-x-2">
@@ -647,7 +639,7 @@
       } else if (totalAmount > 0 && !hasOnSiteItem) {
         document.getElementById('cartTotal').innerText = `NT$ ${totalAmount}`;
       } else if (totalAmount === 0 && hasOnSiteItem) {
-        document.getElementById('cartTotal').innerText = '現場報價 / 時價';
+        document.getElementById('cartTotal').innerText = '時價商品';
       } else {
         document.getElementById('cartTotal').innerText = 'NT$ 0';
       }
@@ -671,7 +663,7 @@
         }
       });
 
-      const orderTotalText = totalAmount > 0 ? `NT$ ${totalAmount} + 時價商品` : '現場報價/時價';
+      const orderTotalText = totalAmount > 0 ? `NT$ ${totalAmount} + 時價商品` : '時價商品';
 
       const order = {
         id: 'ORD-' + Date.now().toString().slice(-6),
@@ -686,7 +678,7 @@
           isOnSite: i.isOnSite,
           internalCat: i.internalCat || '一般商品（不需特別備註）'
         })),
-        items: cart.map(i => `${i.name} x ${i.qty}${i.unitName}${i.isOnSite ? '(現場)' : ''}`).join('、'),
+        items: cart.map(i => `${i.name} x ${i.qty}${i.unitName}${i.isOnSite ? '(時價)' : ''}`).join('、'),
         total: orderTotalText,
         status: '待處理'
       };
@@ -863,7 +855,7 @@
       products = JSON.parse(localStorage.getItem('sh_products')) || defaultProducts;
 
       tbody.innerHTML = products.map(p => {
-        const unitDisplay = (p.units || []).map(u => `${u.name}${p.isOnSite ? '' : ': $' + u.price}`).join('、');
+        const unitDisplay = (p.units || []).map(u => `${u.name}: ${u.isOnSite ? '<span class="text-blue-600 font-bold">時價</span>' : '$' + u.price}`).join('、');
         return `
           <tr class="border-b hover:bg-gray-50">
             <td class="p-3">
@@ -875,7 +867,7 @@
             </td>
             <td class="p-3"><span class="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-xs font-semibold">${p.category}</span></td>
             <td class="p-3"><span class="bg-amber-100 text-amber-900 px-2 py-0.5 rounded text-xs font-bold">${p.internalCat || '一般商品'}</span></td>
-            <td class="p-3 text-xs">${unitDisplay} ${p.isOnSite ? '<span class="text-blue-600 font-bold ml-1">(現場計價)</span>' : ''}</td>
+            <td class="p-3 text-xs">${unitDisplay}</td>
             <td class="p-3 text-right space-x-2">
               <button onclick="editProduct('${p.id}')" class="text-xs bg-amber-100 hover:bg-amber-200 text-amber-900 px-2.5 py-1 rounded font-bold transition">編輯</button>
               <button onclick="deleteProduct('${p.id}')" class="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-2.5 py-1 rounded font-bold transition">刪除</button>
@@ -885,18 +877,18 @@
       }).join('');
     }
 
-    function toggleOnSitePricing(checkbox) {
-      // 保持開放，讓使用者可以自訂現場計價商品的單位名稱（例如：斤、份、隻等）
-    }
-
-    function addUnitRow(name = '', price = '') {
+    function addUnitRow(name = '', price = '', isOnSite = false) {
       const container = document.getElementById('unitRowsContainer');
       const div = document.createElement('div');
-      div.className = 'flex items-center space-x-2 unit-row';
+      div.className = 'flex items-center space-x-2 unit-row bg-white p-2 rounded border';
       div.innerHTML = `
-        <input type="text" placeholder="單位 (如: 斤, 包, 份)" value="${name}" class="unit-name-input w-1/2 px-2 py-1.5 border rounded text-xs outline-none" required>
-        <input type="number" min="0" placeholder="價格 ($)" value="${price}" class="unit-price-input w-1/2 px-2 py-1.5 border rounded text-xs outline-none" required>
-        <button type="button" onclick="this.parentElement.remove()" class="text-red-500 hover:text-red-700 font-bold px-1">&times;</button>
+        <input type="text" placeholder="單位 (如: 斤, 隻)" value="${name}" class="unit-name-input w-1/3 px-2 py-1 border rounded text-xs outline-none" required>
+        <input type="number" min="0" placeholder="價格 ($)" value="${price}" class="unit-price-input w-1/3 px-2 py-1 border rounded text-xs outline-none" required>
+        <label class="flex items-center space-x-1 text-xs cursor-pointer w-1/3 select-none">
+          <input type="checkbox" class="unit-onsite-checkbox w-3.5 h-3.5 text-amber-800 rounded" ${isOnSite ? 'checked' : ''}>
+          <span class="font-bold text-blue-700">設為時價</span>
+        </label>
+        <button type="button" onclick="this.parentElement.remove()" class="text-red-500 hover:text-red-700 font-bold px-1 text-base">&times;</button>
       `;
       container.appendChild(div);
     }
@@ -907,14 +899,13 @@
       document.getElementById('modalTitle').innerText = '新增食材品項';
       document.getElementById('prodDesc').value = '';
       document.getElementById('prodInternalCat').value = '一般商品（不需特別備註）';
-      document.getElementById('prodIsOnSitePricing').checked = false;
       
       const catSelect = document.getElementById('prodCategory');
       categories = JSON.parse(localStorage.getItem('sh_categories')) || defaultCategories;
       catSelect.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
 
       document.getElementById('unitRowsContainer').innerHTML = '';
-      addUnitRow('斤', '');
+      addUnitRow('斤', '', false);
       currentUploadedImageBase64 = '';
       document.getElementById('productModal').classList.remove('hidden');
     }
@@ -958,7 +949,6 @@
       const desc = document.getElementById('prodDesc').value;
       const category = document.getElementById('prodCategory').value;
       const internalCat = document.getElementById('prodInternalCat').value;
-      const isOnSite = document.getElementById('prodIsOnSitePricing').checked;
       const imageUrlInput = document.getElementById('prodImageUrl').value;
 
       const unitRows = document.querySelectorAll('.unit-row');
@@ -966,13 +956,16 @@
       unitRows.forEach(row => {
         const uName = row.querySelector('.unit-name-input').value.trim();
         const uPrice = parseFloat(row.querySelector('.unit-price-input').value);
-        if (uName && !isNaN(uPrice)) { units.push({ name: uName, price: uPrice }); }
+        const uOnSite = row.querySelector('.unit-onsite-checkbox').checked;
+        if (uName && !isNaN(uPrice)) { 
+          units.push({ name: uName, price: uPrice, isOnSite: uOnSite }); 
+        }
       });
       if (units.length === 0) { alert('請至少新增一個單位與價格！'); return; }
 
       const finalImage = currentUploadedImageBase64 || imageUrlInput || 'https://via.placeholder.com/300x200?text=新鮮食材';
 
-      const productObj = { id, name, desc, category, internalCat, isOnSite, units, image: finalImage };
+      const productObj = { id, name, desc, category, internalCat, units, image: finalImage };
 
       products = JSON.parse(localStorage.getItem('sh_products')) || defaultProducts;
       const index = products.findIndex(p => p.id === id);
@@ -998,13 +991,12 @@
       document.getElementById('prodDesc').value = p.desc || '';
       document.getElementById('prodCategory').value = p.category;
       document.getElementById('prodInternalCat').value = p.internalCat || '一般商品（不需特別備註）';
-      document.getElementById('prodIsOnSitePricing').checked = p.isOnSite || false;
       document.getElementById('prodImageUrl').value = p.image.startsWith('data:') ? '' : p.image;
 
       const container = document.getElementById('unitRowsContainer');
       container.innerHTML = '';
-      const units = p.units && p.units.length > 0 ? p.units : [{ name: '斤', price: 0 }];
-      units.forEach(u => addUnitRow(u.name, u.price));
+      const units = p.units && p.units.length > 0 ? p.units : [{ name: '斤', price: 0, isOnSite: false }];
+      units.forEach(u => addUnitRow(u.name, u.price, u.isOnSite));
 
       document.getElementById('modalTitle').innerText = '編輯食材品項';
       document.getElementById('productModal').classList.remove('hidden');
