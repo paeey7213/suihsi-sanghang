@@ -6,6 +6,8 @@
   <title>隨喜商行 Suihsi Market - 線上食材預約</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- 引入 Supabase JS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -67,9 +69,12 @@
       <div class="p-4 flex-grow overflow-y-auto" id="cartItemsContainer"></div>
 
       <div class="p-4 bg-amber-50 border-t border-amber-200">
-        <div class="flex justify-between items-center text-lg font-bold text-gray-800 mb-3">
-          <span>預估總計金額：</span>
-          <span class="text-amber-700 text-xl" id="cartTotal">NT$ 0</span>
+        <div class="flex flex-col mb-3">
+          <div class="flex justify-between items-center text-lg font-bold text-gray-800">
+            <span>預估總計金額：</span>
+            <span class="text-amber-700 text-xl" id="cartTotal">NT$ 0</span>
+          </div>
+          <p class="text-[11px] text-amber-900/80 mt-1 font-medium text-right">＊以實際秤重價格為主，此總金額為參考用</p>
         </div>
 
         <form id="orderForm" onsubmit="submitOrder(event)" class="space-y-3">
@@ -369,6 +374,11 @@
   </div>
 
   <script>
+    // Supabase 設定
+    const SUPABASE_URL = 'https://mwqrzcleywhlwmwvdhqi.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_DOkDS_DI_2xmKUMA6_zzCA_aNk2fw13';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
     const defaultCategories = ['蔬菜', '肉類', '海鮮', '火鍋料', '麵粉乾貨', '水果'];
 
     const defaultProducts = [
@@ -381,7 +391,7 @@
 
     let categories = JSON.parse(localStorage.getItem('sh_categories')) || defaultCategories;
     let products = JSON.parse(localStorage.getItem('sh_products')) || defaultProducts;
-    let orders = JSON.parse(localStorage.getItem('sh_orders')) || [];
+    let orders = [];
     let cart = [];
     let selectingUnitProduct = {};
     let currentCategory = '全部';
@@ -400,12 +410,53 @@
         localStorage.setItem('admin_pwd', 'admin888');
       }
       loadSiteLogo();
+      
+      // 先渲染本地分類與商品，確保畫面絕對不會空白
       renderCategories();
       renderProducts();
       updateCartUI();
       renderOrders();
       renderProductsAdmin();
       renderCategoriesAdmin();
+
+      // 在背景默默去抓 Supabase 雲端訂單與即時更新
+      fetchOrdersFromSupabase();
+
+      // 即時監聽 Supabase 訂單變化 (Realtime)
+      supabase
+        .channel('public:orders')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, payload => {
+          console.log('收到資料庫即時更新：', payload);
+          fetchOrdersFromSupabase();
+        })
+        .subscribe();
+    }
+
+    // 從 Supabase 讀取訂單
+    async function fetchOrdersFromSupabase() {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('讀取雲端訂單失敗，改用本地缓存', error);
+        orders = JSON.parse(localStorage.getItem('sh_orders')) || [];
+      } else {
+        orders = data.map(o => ({
+          id: o.order_id,
+          date: o.date,
+          custName: o.cust_name,
+          custPhone: o.cust_phone,
+          pickupTime: o.pickup_time,
+          rawItems: o.raw_items,
+          items: o.items,
+          total: o.total,
+          status: o.status
+        }));
+        localStorage.setItem('sh_orders', JSON.stringify(orders));
+      }
+      renderOrders();
     }
 
     function loadSiteLogo() {
@@ -487,8 +538,8 @@
         const selectedUnitObj = cartItem ? { name: cartItem.unitName, price: cartItem.unitPrice } : null;
         
         const units = p.units && p.units.length > 0 ? p.units : [{ name: '斤', price: p.price || 0 }];
-        const displayPrice = p.isOnSite ? '現場計價' : (selectedUnitObj ? selectedUnitObj.price : units[0].price);
-        const displayUnitName = p.isOnSite ? '秤重/時價' : (selectedUnitObj ? selectedUnitObj.name : units[0].name);
+        const displayPrice = p.isOnSite ? '現場報價' : (selectedUnitObj ? selectedUnitObj.price : units[0].price);
+        const displayUnitName = p.isOnSite ? '時價/秤重' : (selectedUnitObj ? selectedUnitObj.name : units[0].name);
         const isSelectingUnit = selectingUnitProduct[p.id];
 
         const isWeightUnit = displayUnitName === '斤' || displayUnitName === '半斤';
@@ -552,7 +603,7 @@
       if (!product) return;
 
       if (product.isOnSite) {
-        confirmUnitAndAdd(id, '份/現場秤重', 0);
+        confirmUnitAndAdd(id, '時價/秤重', 0);
         return;
       }
 
@@ -599,6 +650,7 @@
 
       const container = document.getElementById('cartItemsContainer');
       let totalAmount = 0;
+      let hasOnSiteItem = false;
 
       if (cart.length === 0) {
         container.innerHTML = `
@@ -612,10 +664,18 @@
       }
 
       container.innerHTML = cart.map(item => {
-        const itemTotal = Math.round(item.unitPrice * item.qty);
-        totalAmount += itemTotal;
         const isWeight = item.unitName === '斤' || item.unitName === '半斤';
         const step = isWeight ? 0.5 : 1;
+        
+        let itemTotalText = '';
+        if (item.isOnSite) {
+          hasOnSiteItem = true;
+          itemTotalText = '現場報價';
+        } else {
+          const itemTotal = Math.round(item.unitPrice * item.qty);
+          totalAmount += itemTotal;
+          itemTotalText = `NT$ ${itemTotal}`;
+        }
 
         return `
           <div class="flex items-center justify-between py-3 border-b border-gray-100">
@@ -629,20 +689,29 @@
                 <span class="px-2 text-xs font-bold">${item.qty} ${item.unitName}</span>
                 <button onclick="updateQty('${item.id}', ${step})" class="px-2 py-0.5 text-xs font-bold">+</button>
               </div>
-              <span class="font-bold text-amber-800 text-sm w-20 text-right">${item.isOnSite ? '現場報價' : `NT$ ${itemTotal}`}</span>
+              <span class="font-bold text-amber-800 text-sm w-20 text-right">${itemTotalText}</span>
             </div>
           </div>
         `;
       }).join('');
 
-      document.getElementById('cartTotal').innerText = totalAmount > 0 ? `NT$ ${totalAmount} + 現場計價商品` : '現場計價或 NT$ 0';
+      if (totalAmount > 0 && hasOnSiteItem) {
+        document.getElementById('cartTotal').innerText = `NT$ ${totalAmount} + 時價商品`;
+      } else if (totalAmount > 0 && !hasOnSiteItem) {
+        document.getElementById('cartTotal').innerText = `NT$ ${totalAmount}`;
+      } else if (totalAmount === 0 && hasOnSiteItem) {
+        document.getElementById('cartTotal').innerText = '現場報價 / 時價';
+      } else {
+        document.getElementById('cartTotal').innerText = 'NT$ 0';
+      }
     }
 
     function toggleCartModal() {
       document.getElementById('cartModal').classList.toggle('hidden');
     }
 
-    function submitOrder(e) {
+    // 提交訂單同步寫入 Supabase
+    async function submitOrder(e) {
       e.preventDefault();
       if (cart.length === 0) {
         alert('您的預約清單是空的！');
@@ -651,16 +720,19 @@
 
       let totalAmount = 0;
       cart.forEach(item => {
-        totalAmount += Math.round(item.unitPrice * item.qty);
+        if (!item.isOnSite) {
+          totalAmount += Math.round(item.unitPrice * item.qty);
+        }
       });
 
-      const order = {
-        id: 'ORD-' + Date.now().toString().slice(-6),
+      const orderId = 'ORD-' + Date.now().toString().slice(-6);
+      const newOrderData = {
+        order_id: orderId,
         date: new Date().toLocaleString('zh-TW'),
-        custName: document.getElementById('custName').value,
-        custPhone: document.getElementById('custPhone').value,
-        pickupTime: document.getElementById('pickupTime').value,
-        rawItems: cart.map(i => ({
+        cust_name: document.getElementById('custName').value,
+        cust_phone: document.getElementById('custPhone').value,
+        pickup_time: document.getElementById('pickupTime').value,
+        raw_items: cart.map(i => ({
           name: i.name,
           qty: i.qty,
           unitName: i.unitName,
@@ -668,21 +740,24 @@
           internalCat: i.internalCat || '一般商品（不需特別備註）'
         })),
         items: cart.map(i => `${i.name} x ${i.qty}${i.unitName}${i.isOnSite ? '(現場)' : ''}`).join('、'),
-        total: totalAmount,
+        total: totalAmount > 0 ? `NT$ ${totalAmount} + 時價商品` : '現場報價/時價',
         status: '待處理'
       };
 
-      orders = JSON.parse(localStorage.getItem('sh_orders')) || [];
-      orders.unshift(order);
-      localStorage.setItem('sh_orders', JSON.stringify(orders));
+      const { error } = await supabase.from('orders').insert([newOrderData]);
 
-      alert('感謝您的預約！我們已收到您的訂單。');
-      cart = [];
-      updateCartUI();
-      renderProducts();
-      toggleCartModal();
-      document.getElementById('orderForm').reset();
-      renderOrders();
+      if (error) {
+        alert('送出訂單失敗：' + error.message);
+        console.error(error);
+      } else {
+        alert('感謝您的預約！我們已收到您的訂單。');
+        cart = [];
+        updateCartUI();
+        renderProducts();
+        toggleCartModal();
+        document.getElementById('orderForm').reset();
+        await fetchOrdersFromSupabase();
+      }
     }
 
     // Admin Functions
@@ -701,7 +776,7 @@
       if (pwd === savedPwd) {
         closeAdminLogin();
         document.getElementById('adminPanelModal').classList.remove('hidden');
-        renderOrders();
+        fetchOrdersFromSupabase();
         renderProductsAdmin();
         renderCategoriesAdmin();
       } else {
@@ -730,27 +805,31 @@
       checkboxes.forEach(cb => cb.checked = source.checked);
     }
 
-    function deleteSelectedOrders() {
+    async function deleteSelectedOrders() {
       const selectedIds = Array.from(document.querySelectorAll('.order-checkbox:checked')).map(cb => cb.value);
       if (selectedIds.length === 0) {
         alert('請先勾選要刪除的訂單！');
         return;
       }
       if (confirm(`確定要刪除勾選的 ${selectedIds.length} 筆訂單嗎？`)) {
-        orders = JSON.parse(localStorage.getItem('sh_orders')) || [];
-        orders = orders.filter(o => !selectedIds.includes(o.id));
-        localStorage.setItem('sh_orders', JSON.stringify(orders));
-        renderOrders();
-        document.getElementById('selectAllOrders').checked = false;
+        const { error } = await supabase.from('orders').delete().in('order_id', selectedIds);
+        if (error) {
+          alert('刪除失敗：' + error.message);
+        } else {
+          await fetchOrdersFromSupabase();
+          document.getElementById('selectAllOrders').checked = false;
+        }
       }
     }
 
-    function deleteOrder(id) {
+    async function deleteOrder(id) {
       if (confirm('確定要刪除這筆訂單嗎？')) {
-        orders = JSON.parse(localStorage.getItem('sh_orders')) || [];
-        orders = orders.filter(o => o.id !== id);
-        localStorage.setItem('sh_orders', JSON.stringify(orders));
-        renderOrders();
+        const { error } = await supabase.from('orders').delete().eq('order_id', id);
+        if (error) {
+          alert('刪除失敗：' + error.message);
+        } else {
+          await fetchOrdersFromSupabase();
+        }
       }
     }
 
@@ -776,7 +855,7 @@
           </td>
           <td class="p-3 font-semibold text-amber-900">${o.pickupTime}</td>
           <td class="p-3 text-xs text-gray-700 max-w-xs">${o.items}</td>
-          <td class="p-3 font-bold text-amber-800">NT$ ${o.total}</td>
+          <td class="p-3 font-bold text-amber-800">${o.total.startsWith('NT$') || o.total.includes('時價') ? o.total : 'NT$ ' + o.total}</td>
           <td class="p-3">
             <span class="px-2 py-1 text-xs font-bold rounded-full ${o.status === '已完成' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
               ${o.status}
@@ -1007,13 +1086,17 @@
       }
     }
 
-    function toggleOrderStatus(id) {
+    async function toggleOrderStatus(id) {
       orders = JSON.parse(localStorage.getItem('sh_orders')) || [];
       const order = orders.find(o => o.id === id);
       if (order) {
-        order.status = order.status === '待處理' ? '已完成' : '待處理';
-        localStorage.setItem('sh_orders', JSON.stringify(orders));
-        renderOrders();
+        const newStatus = order.status === '待處理' ? '已完成' : '待處理';
+        const { error } = await supabase.from('orders').update({ status: newStatus }).eq('order_id', id);
+        if (error) {
+          alert('更新狀態失敗：' + error.message);
+        } else {
+          await fetchOrdersFromSupabase();
+        }
       }
     }
 
