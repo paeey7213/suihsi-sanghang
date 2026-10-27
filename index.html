@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>隨喜商行 Suihsi Market - 線上食材預約</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-amber-50/30 text-gray-800 min-h-screen flex flex-col">
+
+  <!-- Header Section -->
+  <header class="bg-white shadow-sm border-b border-amber-100 sticky top-0 z-30">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <img id="siteLogoImg" src="https://i.imgur.com/uR4K2uM.png" alt="隨喜商行" class="h-12 w-auto object-contain rounded-md" onerror="this.src='https://via.placeholder.com/150x60?text=隨喜商行'">
+        <span class="text-xl font-black text-amber-950 tracking-wider">隨喜商行</span>
+      </div>
+      
+      <div class="flex items-center space-x-2">
+        <button onclick="toggleCartModal()" class="relative p-2 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-full transition shadow-sm">
+          <i class="fa-solid fa-cart-shopping text-xl"></i>
+          <span id="cartBadge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white">0</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-5xl mx-auto px-4 py-6 flex-grow w-full">
+    <div class="flex space-x-2 overflow-x-auto no-scrollbar mb-6 pb-2 border-b border-amber-200/60" id="categoryContainer"></div>
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="productGrid"></div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-amber-900 text-amber-100 mt-12 py-6 border-t border-amber-800">
+    <div class="max-w-5xl mx-auto px-4 flex justify-between items-center text-sm">
+      <p class="font-medium">© 隨喜商行 Suihsi Market. 版權所有</p>
+      <button onclick="openAdminLogin()" class="text-amber-300 hover:text-white text-xs bg-amber-800 px-2 py-1 rounded transition flex items-center gap-1">
+        <i class="fa-solid fa-lock"></i> 管理員後台
+      </button>
+    </div>
+  </footer>
+
+  <!-- Floating Cart Button for Mobile -->
+  <div class="fixed bottom-6 right-6 z-20 md:hidden">
+    <button onclick="toggleCartModal()" class="bg-amber-700 hover:bg-amber-800 text-white font-bold px-5 py-3 rounded-full shadow-lg flex items-center space-x-2">
+      <i class="fa-solid fa-basket-shopping"></i>
+      <span>預約清單</span>
+      <span id="floatingCartBadge" class="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+    </button>
+  </div>
+
+  <!-- Cart Modal -->
+  <div id="cartModal" class="fixed inset-0 bg-black/50 z-50 hidden flex justify-end">
+    <div class="bg-white w-full max-w-md h-full flex flex-col shadow-2xl transition-transform">
+      <div class="p-4 bg-amber-800 text-white flex justify-between items-center">
+        <h2 class="text-lg font-bold flex items-center gap-2"><i class="fa-solid fa-basket-shopping"></i> 您的預約清單</h2>
+        <button onclick="toggleCartModal()" class="text-amber-200 hover:text-white text-2xl font-bold">&times;</button>
+      </div>
+
+      <div class="p-4 flex-grow overflow-y-auto" id="cartItemsContainer"></div>
+
+      <div class="p-4 bg-amber-50 border-t border-amber-200 space-y-2">
+        <div class="flex justify-between items-center text-lg font-bold text-gray-800">
+          <span>預估總計金額：</span>
+          <span class="text-amber-700 text-xl" id="cartTotal">NT$ 0</span>
+        </div>
+        <!-- 新增金額備註 -->
+        <p class="text-[11px] text-amber-900 bg-amber-100/70 p-1.5 rounded font-medium text-center">
+          ＊依照實際重量為主 會和訂單金額稍有落差
+        </p>
+
+        <form id="orderForm" onsubmit="submitOrder(event)" class="space-y-3 pt-2">
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">訂購人姓名 *</label>
+            <input type="text" id="custName" required placeholder="請輸入您的姓名" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-amber-500 outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">聯絡電話 *</label>
+            <input type="tel" id="custPhone" required placeholder="例如：0912345678" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-amber-500 outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">取貨時間 *</label>
+            <select id="pickupTime" required class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-amber-500 outline-none bg-white">
+              <option value="明天早上 (7:00 - 12:00)">明天早上 (7:00 - 12:00)</option>
+              <option value="明天下午 (15:00 - 18:00)">明天下午 (15:00 - 18:00)</option>
+            </select>
+          </div>
+
+          <button type="submit" class="w-full bg-amber-700 hover:bg-amber-800 text-white font-bold py-3 rounded-md shadow-md transition text-center mt-2">
+            確認送出食材預約
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Login Modal -->
+  <div id="adminLoginModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm rounded-xl shadow-xl overflow-hidden p-6 space-y-4">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="font-bold text-lg text-gray-800"><i class="fa-solid fa-lock text-amber-700"></i> 管理員登入</h3>
+        <button onclick="closeAdminLogin()" class="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-gray-700 mb-1">請輸入管理員密碼</label>
+        <input type="password" id="adminPasswordInput" class="w-full px-3 py-2 border rounded-md text-sm outline-none focus:ring-2 focus:ring-amber-500" placeholder="請輸入密碼">
+      </div>
+      <div class="flex justify-end space-x-2 pt-2">
+        <button onclick="closeAdminLogin()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-bold">取消</button>
+        <button onclick="verifyAdminPassword()" class="px-4 py-2 bg-amber-800 text-white rounded-lg text-sm font-bold shadow-sm">登入後台</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Panel Modal -->
+  <div id="adminPanelModal" class="fixed inset-0 bg-gray-100 z-50 hidden flex flex-col overflow-y-auto">
+    <header class="bg-gray-900 text-white shadow-md sticky top-0 z-10">
+      <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+        <div class="flex items-center space-x-3">
+          <i class="fa-solid fa-sliders text-amber-500 text-2xl"></i>
+          <h1 class="text-xl font-bold tracking-wide">隨喜商行 · 後台管理系統</h1>
+        </div>
+        <button onclick="closeAdminPanel()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-xs font-bold transition">
+          <i class="fa-solid fa-right-from-bracket"></i> 關閉後台返回前台
+        </button>
+      </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 py-6 space-y-8 w-full flex-grow">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-xl shadow-sm border">
+        <div class="flex flex-wrap gap-2 border-b sm:border-b-0 pb-2 sm:pb-0">
+          <button onclick="switchAdminTab('orders')" id="tabOrders" class="px-4 py-2 font-bold rounded-lg transition bg-amber-800 text-white">
+            <i class="fa-solid fa-list-check mr-1"></i> 訂單管理
+          </button>
+          <button onclick="switchAdminTab('products')" id="tabProducts" class="px-4 py-2 font-bold rounded-lg transition text-gray-600 hover:bg-gray-100">
+            <i class="fa-solid fa-boxes-packing mr-1"></i> 商品與定價管理
+          </button>
+          <button onclick="switchAdminTab('categories')" id="tabCategories" class="px-4 py-2 font-bold rounded-lg transition text-gray-600 hover:bg-gray-100">
+            <i class="fa-solid fa-tags mr-1"></i> 前台分類管理
+          </button>
+          <button onclick="switchAdminTab('settings')" id="tabSettings" class="px-4 py-2 font-bold rounded-lg transition text-gray-600 hover:bg-gray-100">
+            <i class="fa-solid fa-gear mr-1"></i> 系統與密碼設定
+          </button>
+        </div>
+      </div>
+
+      <!-- Orders Section -->
+      <section id="sectionOrders" class="bg-white rounded-xl shadow-sm border p-4 sm:p-6 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+            <i class="fa-solid fa-receipt text-amber-700"></i> 即時訂單列表
+          </h2>
+          <div class="flex items-center space-x-2">
+            <button onclick="openExportModal('batch')" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1">
+              <i class="fa-solid fa-file-excel"></i> 批量/選取匯出
+            </button>
+            <button onclick="deleteSelectedOrders()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1">
+              <i class="fa-solid fa-trash"></i> 批量刪除勾選
+            </button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-gray-600">
+            <thead class="bg-gray-50 text-gray-700 uppercase font-bold text-xs border-b">
+              <tr>
+                <th class="p-3 w-10 text-center"><input type="checkbox" id="selectAllOrders" onclick="toggleSelectAllOrders(this)"></th>
+                <th class="p-3">編號/時間</th>
+                <th class="p-3">顧客資訊</th>
+                <th class="p-3">預約取貨時間</th>
+                <th class="p-3">訂購食材明細</th>
+                <th class="p-3">總金額</th>
+                <th class="p-3">狀態</th>
+                <th class="p-3 text-right">操作</th>
+              </tr>
+            </thead>
+            <tbody id="ordersTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Products Management Section -->
+      <section id="sectionProducts" class="bg-white rounded-xl shadow-sm border p-4 sm:p-6 hidden">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+            <i class="fa-solid fa-wheat-awn text-amber-700"></i> 食材、備註與多單位價格管理
+          </h2>
+          <button onclick="openProductModal()" class="bg-amber-800 hover:bg-amber-900 text-white px-4 py-2 rounded-lg text-sm font-bold transition flex items-center gap-1 shadow-sm">
+            <i class="fa-solid fa-plus"></i> 新增食材品項
+          </button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-gray-600">
+            <thead class="bg-gray-50 text-gray-700 uppercase font-bold text-xs border-b">
+              <tr>
+                <th class="p-3">圖片</th>
+                <th class="p-3">品名與備註</th>
+                <th class="p-3">前台分類</th>
+                <th class="p-3">內部生產分類</th>
+                <th class="p-3">單位與獨立價格 / 現場計價設定</th>
+                <th class="p-3 text-right">操作</th>
+              </tr>
+            </thead>
+            <tbody id="productsTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Categories Management Section -->
+      <section id="sectionCategories" class="bg-white rounded-xl shadow-sm border p-6 space-y-6 hidden max-w-2xl">
+        <div class="flex justify-between items-center border-b pb-3">
+          <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+            <i class="fa-solid fa-tags text-amber-700"></i> 前台商品分類管理
+          </h2>
+          <button onclick="openAddCategoryPrompt()" class="bg-amber-800 hover:bg-amber-900 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1">
+            <i class="fa-solid fa-plus"></i> 新增分類
+          </button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-gray-600">
+            <thead class="bg-gray-50 text-gray-700 uppercase font-bold text-xs border-b">
+              <tr>
+                <th class="p-3">分類名稱</th>
+                <th class="p-3 text-right">操作</th>
+              </tr>
+            </thead>
+            <tbody id="categoriesTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Settings Section -->
+      <section id="sectionSettings" class="bg-white rounded-xl shadow-sm border p-6 space-y-6 hidden max-w-xl">
+        <h2 class="text-lg font-bold text-gray-800 border-b pb-3 flex items-center gap-2">
+          <i class="fa-solid fa-gear text-amber-700"></i> 網站商標與安全密碼設定
+        </h2>
+        <div class="space-y-2">
+          <label class="block text-sm font-bold text-gray-700">更改左上角網站商標 Logo</label>
+          <div class="flex items-center gap-4">
+            <img id="settingLogoPreview" src="" class="h-12 w-auto object-contain border rounded p-1 bg-gray-50" onerror="this.src='https://via.placeholder.com/150x60?text=Logo'">
+            <input type="file" id="logoImageFile" accept="image/*" onchange="handleLogoUpload(event)" class="text-xs text-gray-500">
+          </div>
+          <input type="url" id="logoImageUrlInput" placeholder="或貼上圖片網址 https://" class="w-full px-3 py-2 border rounded-md text-sm outline-none mt-1">
+          <button onclick="saveLogo()" class="px-4 py-2 bg-amber-800 hover:bg-amber-900 text-white rounded-md text-xs font-bold transition mt-2">儲存新商標</button>
+        </div>
+        <hr class="my-4">
+        <div class="space-y-3">
+          <label class="block text-sm font-bold text-gray-700">更改管理員後台登入密碼</label>
+          <div>
+            <label class="block text-xs font-bold text-red-700 mb-1">請輸入當前舊密碼 *</label>
+            <input type="password" id="oldAdminPwd" placeholder="需要正確的舊密碼才能修改" class="w-full px-3 py-2 border border-red-200 rounded-md text-sm outline-none focus:ring-2 focus:ring-red-500">
+          </div>
+          <div>
+            <label class="block text-xs text-gray-600 mb-1">輸入新密碼 *</label>
+            <input type="password" id="newAdminPwd" placeholder="請輸入新密碼" class="w-full px-3 py-2 border rounded-md text-sm outline-none">
+          </div>
+          <div>
+            <label class="block text-xs text-gray-600 mb-1">確認新密碼 *</label>
+            <input type="password" id="confirmAdminPwd" placeholder="再次輸入新密碼" class="w-full px-3 py-2 border rounded-md text-sm outline-none">
+          </div>
+          <button onclick="saveNewPasswordWithValidation()" class="px-4 py-2 bg-amber-800 hover:bg-amber-900 text-white rounded-md text-xs font-bold transition">驗證舊密碼並更新</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Export Selection Modal -->
+  <div id="exportModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-xl shadow-xl overflow-hidden p-6 space-y-4">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="font-bold text-lg text-gray-800"><i class="fa-solid fa-file-arrow-down text-emerald-700"></i> 匯出報表類型</h3>
+        <button onclick="closeExportModal()" class="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+      </div>
+      <p id="exportModalDesc" class="text-xs text-gray-500">請選擇要匯出的格式：</p>
+      <div class="space-y-2">
+        <button onclick="executeExport('all')" class="w-full text-left px-4 py-3 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg font-bold text-amber-900 transition flex items-center justify-between">
+          <span>完整訂單 (Excel / CSV)</span>
+          <i class="fa-solid fa-file-excel text-emerald-700"></i>
+        </button>
+        <button onclick="executeExport('老闆單')" class="w-full text-left px-4 py-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg font-bold text-blue-900 transition flex items-center justify-between">
+          <span>老闆單 (Word 檔)</span>
+          <i class="fa-solid fa-file-word text-blue-700"></i>
+        </button>
+        <button onclick="executeExport('老闆娘單')" class="w-full text-left px-4 py-3 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg font-bold text-purple-900 transition flex items-center justify-between">
+          <span>老闆娘單 (Word 檔)</span>
+          <i class="fa-solid fa-file-word text-purple-700"></i>
+        </button>
+        <button onclick="executeExport('麵單')" class="w-full text-left px-4 py-3 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg font-bold text-emerald-900 transition flex items-center justify-between">
+          <span>麵單 (Word 檔)</span>
+          <i class="fa-solid fa-file-word text-emerald-700"></i>
+        </button>
+      </div>
+      <div class="pt-2 text-right">
+        <button onclick="closeExportModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-bold">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add/Edit Product Modal -->
+  <div id="productModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-lg rounded-xl shadow-xl overflow-hidden max-h-[90vh] flex flex-col">
+      <div class="p-4 bg-gray-900 text-white flex justify-between items-center">
+        <h3 class="font-bold text-lg" id="modalTitle">新增食材品項</h3>
+        <button onclick="closeProductModal()" class="text-gray-400 hover:text-white text-xl">&times;</button>
+      </div>
+      <form id="productForm" onsubmit="saveProduct(event)" class="p-6 space-y-4 overflow-y-auto">
+        <input type="hidden" id="prodId">
+        
+        <div>
+          <label class="block text-xs font-bold text-gray-700 mb-1">食材名稱 *</label>
+          <input type="text" id="prodName" required class="w-full px-3 py-2 border rounded-md text-sm outline-none focus:ring-2 focus:ring-amber-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-gray-700 mb-1">食材備註 / 規格說明 (選填)</label>
+          <input type="text" id="prodDesc" placeholder="例如：約600g/包（留空則不顯示）" class="w-full px-3 py-2 border rounded-md text-sm outline-none">
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">前台顧客分類 *</label>
+            <select id="prodCategory" class="w-full px-3 py-2 border rounded-md text-sm outline-none bg-white"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">內部生產分類 *</label>
+            <select id="prodInternalCat" class="w-full px-3 py-2 border rounded-md text-sm outline-none bg-amber-50 font-bold text-amber-900">
+              <option value="一般商品（不需特別備註）">一般商品（不需特別備註）</option>
+              <option value="老闆單">老闆單</option>
+              <option value="老闆娘單">老闆娘單</option>
+              <option value="麵單">麵單</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 單位與獨立價格 / 現場計價設定區 -->
+        <div class="bg-amber-50 p-3 rounded-lg border border-amber-200 space-y-3">
+          <div class="flex justify-between items-center">
+            <label class="block text-xs font-bold text-amber-900">各單位價格與現場計價設定 *</label>
+            <button type="button" onclick="addUnitRow()" class="text-xs bg-amber-800 text-white px-2 py-1 rounded font-bold hover:bg-amber-900">
+              <i class="fa-solid fa-plus text-[10px]"></i> 新增單位
+            </button>
+          </div>
+          <div id="unitRowsContainer" class="space-y-2"></div>
+          <p class="text-[10px] text-gray-500">※ 勾選「現場計價」的單位，前台點選時會顯示「現場計價」，金額不計入線上預估總額中。</p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-gray-700 mb-1">食材圖片 (上傳照片或網址)</label>
+          <input type="file" id="prodImageFile" accept="image/*" onchange="handleImageUpload(event)" class="w-full text-xs text-gray-500 mb-2">
+          <input type="url" id="prodImageUrl" placeholder="或貼上圖片網址 https://" class="w-full px-3 py-2 border rounded-md text-sm outline-none">
+        </div>
+
+        <div class="flex justify-end space-x-2 pt-4 border-t">
+          <button type="button" onclick="closeProductModal()" class="px-4 py-2 border rounded-md text-sm font-bold text-gray-600 hover:bg-gray-100">取消</button>
+          <button type="submit" class="px-4 py-2 bg-amber-800 hover:bg-amber-900 text-white rounded-md text-sm font-bold shadow-sm">儲存設定</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const defaultCategories = ['蔬菜', '肉類', '海鮮', '火鍋料', '麵粉乾貨', '水果'];
+
+    const defaultProducts = [
+      { id: '1', name: '高麗菜', category: '蔬菜', internalCat: '老闆單', units: [{ name: '斤', price: 35, isOnSite: false }, { name: '半斤', price: 18, isOnSite: false }, { name: '顆', price: 0, isOnSite: true }], desc: '高山產直脆甜', image: 'https://images.unsplash.com/photo-1594282486552-05b4d80fbb9f?w=400' },
+      { id: '2', name: '大白菜', category: '蔬菜', internalCat: '老闆單', units: [{ name: '斤', price: 28, isOnSite: false }], desc: '', image: 'https://images.unsplash.com/photo-1587049352847-4a222e784d38?w=400' },
+      { id: '3', name: '台灣五花肉', category: '肉類', internalCat: '老闆娘單', units: [{ name: '斤', price: 160, isOnSite: false }, { name: '半斤', price: 80, isOnSite: false }], desc: '每日溫體直送切塊', image: 'https://images.unsplash.com/photo-1602470520998-f4a52199a3d6?w=400' },
+      { id: '4', name: '手工蛋餃', category: '火鍋料', internalCat: '一般商品（不需特別備註）', units: [{ name: '包', price: 65, isOnSite: false }, { name: '盒', price: 120, isOnSite: false }], desc: '一包10入餡料飽滿', image: 'https://images.unsplash.com/photo-1541696432-82c6da8ce7bf?w=400' }
+    ];
+
+    let categories = JSON.parse(localStorage.getItem('sh_categories')) || defaultCategories;
+    let products = JSON.parse(localStorage.getItem('sh_products')) || defaultProducts;
+    let orders = JSON.parse(localStorage.getItem('sh_orders')) || [];
+    let cart = [];
+    let selectingUnitProduct = {};
+    let currentCategory = '全部';
+    let currentUploadedImageBase64 = '';
+    let currentUploadedLogoBase64 = '';
+    let exportMode = 'batch';
+
+    function init() {
+      if (!localStorage.getItem('sh_categories')) {
+        localStorage.setItem('sh_categories', JSON.stringify(defaultCategories));
+      }
+      if (!localStorage.getItem('sh_products')) {
+        localStorage.setItem('sh_products', JSON.stringify(defaultProducts));
+      }
+      if (!localStorage.getItem('admin_pwd')) {
+        localStorage.setItem('admin_pwd', 'admin888');
+      }
+      loadSiteLogo();
+      renderCategories();
+      renderProducts();
+      updateCartUI();
+      renderOrders();
+      renderProductsAdmin();
+      renderCategoriesAdmin();
+    }
+
+    function loadSiteLogo() {
+      const savedLogo = localStorage.getItem('site_logo') || 'https://i.imgur.com/uR4K2uM.png';
+      document.getElementById('siteLogoImg').src = savedLogo;
+      document.getElementById('settingLogoPreview').src = savedLogo;
+      document.getElementById('logoImageUrlInput').value = savedLogo.startsWith('data:') ? '' : savedLogo;
+    }
+
+    function handleLogoUpload(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onloadend = function() {
+          currentUploadedLogoBase64 = reader.result;
+          document.getElementById('settingLogoPreview').src = currentUploadedLogoBase64;
+        }
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function saveLogo() {
+      const urlInput = document.getElementById('logoImageUrlInput').value;
+      const finalLogo = currentUploadedLogoBase64 || urlInput || 'https://i.imgur.com/uR4K2uM.png';
+      localStorage.setItem('site_logo', finalLogo);
+      loadSiteLogo();
+      alert('網站商標 Logo 已成功更新！');
+    }
+
+    function saveNewPasswordWithValidation() {
+      const oldPwdInput = document.getElementById('oldAdminPwd').value;
+      const newPwdInput = document.getElementById('newAdminPwd').value;
+      const confirmPwdInput = document.getElementById('confirmAdminPwd').value;
+      const currentSavedPwd = localStorage.getItem('admin_pwd') || 'admin888';
+
+      if (!oldPwdInput) { alert('請先輸入當前的舊密碼！'); return; }
+      if (oldPwdInput !== currentSavedPwd) { alert('舊密碼不正確，無法修改密碼！'); return; }
+      if (!newPwdInput || !confirmPwdInput) { alert('請輸入新密碼與確認密碼！'); return; }
+      if (newPwdInput !== confirmPwdInput) { alert('兩次輸入的新密碼不相符！'); return; }
+
+      localStorage.setItem('admin_pwd', newPwdInput);
+      alert('管理員密碼已順利更新！下次登入請使用新密碼。');
+      document.getElementById('oldAdminPwd').value = '';
+      document.getElementById('newAdminPwd').value = '';
+      document.getElementById('confirmAdminPwd').value = '';
+    }
+
+    function renderCategories() {
+      const container = document.getElementById('categoryContainer');
+      categories = JSON.parse(localStorage.getItem('sh_categories')) || defaultCategories;
+      const allCats = ['全部', ...categories];
+
+      container.innerHTML = allCats.map(cat => `
+        <button onclick="selectCategory('${cat}')" class="px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition ${currentCategory === cat ? 'bg-amber-800 text-white shadow-sm' : 'bg-white text-gray-700 border border-gray-200 hover:bg-amber-50'}">
+          ${cat}
+        </button>
+      `).join('');
+    }
+
+    function selectCategory(cat) {
+      currentCategory = cat;
+      renderCategories();
+      renderProducts();
+    }
+
+    function renderProducts() {
+      const grid = document.getElementById('productGrid');
+      products = JSON.parse(localStorage.getItem('sh_products')) || defaultProducts;
+      const filtered = currentCategory === '全部' ? products : products.filter(p => p.category === currentCategory);
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `<div class="col-span-full text-center py-12 text-gray-500">此分類暫無商品</div>`;
+        return;
+      }
+
+      grid.innerHTML = filtered.map(p => {
+        const cartItem = cart.find(item => item.id === p.id);
+        const qty = cartItem ? cartItem.qty : 0;
+        const selectedUnitObj = cartItem ? { name: cartItem.unitName, price: cartItem.unitPrice, isOnSite: cartItem.isOnSite } : null;
+        
+        const units = p.units && p.units.length > 0 ? p.units : [{ name: '斤', price: p.price || 0, isOnSite: false }];
+        const activeUnit = selectedUnitObj || units[0];
+        
+        const displayPrice = activeUnit.isOnSite ? '現場計價' : `NT$ ${activeUnit.price}`;
+        const displayUnitName = activeUnit.name;
+        const isSelectingUnit = selectingUnitProduct[p.id];
+
+        const isWeightUnit = displayUnitName === '斤' || displayUnitName === '半斤';
+        const step = isWeightUnit ? 0.5 : 1;
+
+        return `
+          <div class="bg-white rounded-xl shadow-sm border border-amber-100 overflow-hidden flex flex-col justify-between hover:shadow-md transition">
+            <div>
+              <div class="h-36 w-full bg-gray-100 relative">
+                <img src="${p.image}" alt="${p.name}" class="w-full h-full object-cover" onerror="this.src='https://via.placeholder.com/300x200?text=新鮮食材'">
+                <span class="absolute top-2 left-2 bg-amber-800/80 text-white text-xs px-2 py-0.5 rounded-full backdrop-blur-sm">${p.category}</span>
+              </div>
+              <div class="p-3">
+                <h3 class="font-bold text-gray-800 text-base">${p.name}</h3>
+                
+                ${p.desc && p.desc.trim() !== '' ? `
+                  <p class="text-xs text-amber-900 bg-amber-50/80 px-2 py-1 rounded mt-1 font-medium border border-amber-100/60 line-clamp-2">
+                    ${p.desc}
+                  </p>
+                ` : ''}
+
+                <div class="mt-2 text-amber-800 font-extrabold text-lg">
+                  ${displayPrice} <span class="text-xs font-normal text-gray-500">/ ${displayUnitName}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-3 pt-0">
+              ${qty > 0 ? `
+                <div class="flex items-center justify-between bg-amber-50 rounded-lg p-1 border border-amber-200 mt-2">
+                  <button onclick="updateQty('${p.id}', -${step})" class="w-8 h-8 rounded-md bg-white border border-gray-300 flex items-center justify-center font-bold text-amber-900 shadow-sm">-</button>
+                  <span class="font-bold text-amber-900 text-sm">${qty} ${displayUnitName}</span>
+                  <button onclick="updateQty('${p.id}', ${step})" class="w-8 h-8 rounded-md bg-white border border-gray-300 flex items-center justify-center font-bold text-amber-900 shadow-sm">+</button>
+                </div>
+              ` : isSelectingUnit ? `
+                <div class="bg-amber-50 p-2 rounded-lg border border-amber-200 text-center space-y-1.5">
+                  <p class="text-[10px] font-bold text-amber-900">請先選擇計價單位：</p>
+                  <div class="flex flex-wrap gap-1 justify-center">
+                    ${units.map(u => `
+                      <button onclick="confirmUnitAndAdd('${p.id}', '${u.name}', ${u.price}, ${u.isOnSite})" class="px-2.5 py-1 bg-amber-800 hover:bg-amber-900 text-white rounded text-xs font-bold transition shadow-sm">
+                        ${u.name} (${u.isOnSite ? '現場計價' : '$' + u.price})
+                      </button>
+                    `).join('')}
+                  </div>
+                </div>
+              ` : `
+                <button onclick="handleFirstClick('${p.id}')" class="w-full bg-amber-800 hover:bg-amber-900 text-white font-bold py-2 rounded-lg text-sm transition flex items-center justify-center gap-1 shadow-sm mt-2">
+                  <i class="fa-solid fa-plus text-xs"></i> 加入預約
+                </button>
+              `}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function handleFirstClick(id) {
+      products = JSON.parse(localStorage.getItem('sh_products')) || defaultProducts;
+      const product = products.find(p => p.id === id);
+      if (!product) return;
+
+      const units = product.units && product.units.length > 0 ? product.units : [{ name: '斤', price: product.price || 0, isOnSite: false }];
+      if (units.length === 1) {
+        confirmUnitAndAdd(id, units[0].name, units[0].price, units[0].isOnSite);
+      } else {
+        selectingUnitProduct[id] = true;
+        renderProducts();
+      }
+    }
+
+    function confirmUnitAndAdd(id, unitName, unitPrice, isOnSite) {
+      products = JSON.parse(localStorage.getItem('sh_products')) || defaultProducts;
+      const product = products.find(p => p.id === id);
+      if (!product) return;
+
+      selectingUnitProduct[id] = false;
+      const isWeight = unitName === '斤' || unitName === '半斤';
+      const initialQty = isWeight ? 0.5 : 1;
+
+      cart.push({ ...product, qty: initialQty, unitName, unitPrice, isOnSite });
+      updateCartUI();
+      renderProducts();
+    }
+
+    function updateQty(id, change) {
+      let item = cart.find(i => i.id === id);
+      if (item) {
+        item.qty = Math.max(0, Math.round((item.qty + change) * 10) / 10);
+        if (item.qty === 0) {
+          cart = cart.filter(i => i.id !== id);
+        }
+      }
+      updateCartUI();
+      renderProducts();
+    }
+
+    function updateCartUI() {
+      const totalCount = cart.reduce((sum, item) => sum + 1, 0);
+      document.getElementById('cartBadge').innerText = totalCount;
+      document.getElementById('cartBadge').classList.toggle('hidden', totalCount === 0);
+      document.getElementById('floatingCartBadge').innerText = totalCount;
+
+      const container = document.getElementById('cartItemsContainer');
+      let totalAmount = 0;
+      let hasOnSiteItem = false;
+
+      if (cart.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-12 text-gray-400">
+            <i class="fa-solid fa-basket-shopping text-4xl mb-3"></i>
+            <p>您的預約清單是空的</p>
+          </div>
+        `;
+        document.getElementById('cartTotal').innerText = 'NT$ 0';
+        return;
+      }
+
+      container.innerHTML = cart.map(item => {
+        const isWeight = item.unitName === '斤' || item.unitName === '半斤';
+        const step = isWeight ? 0.5 : 1;
+
+        if (item.isOnSite) {
+          hasOnSiteItem = true;
+          return `
+            <div class="flex items-center justify-between py-3 border-b border-gray-100">
+              <div class="flex-1 pr-2">
+                <h4 class="font-bold text-gray-800 text-sm">${item.name} (${item.unitName})</h4>
+                <p class="text-xs text-blue-600 font-bold">現場計價</p>
+              </div>
+              <div class="flex items-center space-x-2">
+                <div class="flex items-center bg-gray-100 rounded border">
+                  <button onclick="updateQty('${item.id}', -${step})" class="px-2 py-0.5 text-xs font-bold">-</button>
+                  <span class="px-2 text-xs font-bold">${item.qty} ${item.unitName}</span>
+                  <button onclick="updateQty('${item.id}', ${step})" class="px-2 py-0.5 text-xs font-bold">+</button>
+                </div>
+                <span class="font-bold text-blue-600 text-sm w-20 text-right">現場計價</span>
+              </div>
+            </div>
+          `;
+        } else {
+          const itemTotal = Math.round(item.unitPrice * item.qty);
+          totalAmount += itemTotal;
+          return `
+            <div class="flex items-center justify-between py-3 border-b border-gray-100">
+              <div class="flex-1 pr-2">
+                <h4 class="font-bold text-gray-800 text-sm">${item.name} (${item.unitName})</h4>
+                <p class="text-xs text-gray-500">NT$ ${item.unitPrice} / ${item.unitName}</p>
+              </div>
+              <div class="flex items-center space-x-2">
+                <div class="flex items-center bg-gray-100 rounded border">
+                  <button onclick="updateQty('${item.id}', -${step})" class="px-2 py-0.5 text-xs font-bold">-</button>
+                  <span class="px-2 text-xs font-bold">${item.qty} ${item.unitName}</span>
+                  <button onclick="updateQty('${item.id}', ${step})" class="px-2 py-0.5 text-xs font-bold">+</button>
+                </div>
+                <span class="font-bold text-amber-800 text-sm w-20 text-right">NT$ ${itemTotal}</span>
+              </div>
+            </div>
+          `;
+        }
+      }).join('');
+
+      let totalDisplay = `NT$ ${totalAmount}`;
+      if (hasOnSiteItem) {
+        totalDisplay += ' + 時價';
+      }
+      document.getElementById('cartTotal').innerText = totalDisplay;
+    }
+
+    function toggleCartModal() {
+      document.getElementById('cartModal').classList.toggle('hidden');
+    }
+
+    function submitOrder(e) {
+      e.preventDefault();
+      if (cart.length === 0) {
+        alert('您的預約清單是空的！');
+        return;
+      }
+
+      let totalAmount = 0;
+      cart.forEach(item => {
+        if (!item.isOnSite) {
+          totalAmount += Math.round(item.unitPrice * item.qty);
+        }
+      });
+
+      const order = {
+        id: 'ORD-' + Date.now().toString().slice(-6),
+        date: new Date().toLocaleString('zh-TW'),
+        custName: document.getElementById('custName').value,
+        custPhone: document.getElementById('custPhone').value,
+        pickupTime: document.getElementById('pickupTime').value,
+        rawItems: cart.map(i => ({
+          name: i.name,
+          qty: i.qty,
+          unitName: i.unitName,
+          isOnSite: i.isOnSite,
+          internalCat: i.internalCat || '一般商品（不需特別備註）'
+        })),
+        items: cart.map(i => `${i.name} x ${i.qty}${i.unitName}${i.isOnSite ? '(現場計價)' : ''}`).join('、'),
+        total: totalAmount > 0 ? `NT$ ${totalAmount}${cart.some(i => i.isOnSite) ? ' + 時價' : ''}` : '現場計價',
+        status: '待處理'
+      };
+
+      orders = JSON.parse(localStorage.getItem('sh_orders')) || [];
+      orders.unshift(order);
+      localStorage.setItem('sh_orders', JSON.stringify(orders));
+
+      alert('感謝您的預約！我們已收到您的訂單。');
+      cart = [];
+      updateCartUI();
+      renderProducts();
+      toggleCartModal();
+      document.getElementById('orderForm').reset();
+      renderOrders();
+    }
+
+    // Admin Functions
+    function openAdminLogin() {
+      document.getElementById('adminPasswordInput').value = '';
+      document.getElementById('adminLoginModal').classList.remove('hidden');
+    }
+
+    function closeAdminLogin() {
+      document.getElementById('adminLoginModal').classList.add('hidden');
+    }
+
+    function verifyAdminPassword() {
+      const pwd = document.getElementById('adminPasswordInput').value;
+      const savedPwd = localStorage.getItem('admin_pwd') || 'admin888';
+      if (pwd === savedPwd) {
+        closeAdminLogin();
+        document.getElementById('adminPanelModal').classList.remove('hidden');
+        renderOrders();
+        renderProductsAdmin();
+        renderCategoriesAdmin();
+      } else {
+        alert('密碼錯誤！');
+      }
+    }
+
+    function closeAdminPanel() {
+      document.getElementById('adminPanelModal').classList.add('hidden');
+    }
+
+    function switchAdminTab(tab) {
+      document.getElementById('sectionOrders').classList.toggle('hidden', tab !== 'orders');
+      document.getElementById('sectionProducts').classList.toggle('hidden', tab !== 'products');
+      document.getElementById('sectionCategories').classList.toggle('hidden', tab !== 'categories');
+      document.getElementById('sectionSettings').classList.toggle('hidden', tab !== 'settings');
+
+      document.getElementById('tabOrders').className = tab === 'orders' ? 'px-4 py-2 font-bold rounded-lg transition bg-amber-800 text-white' : 'px-4 py-2 font-bold rounded-lg transition text-gray-600 hover:bg-gray-100';
+      document.getElementById('tabProducts').className = tab === 'products' ? 'px-4 py-2 font-bold rounded-lg transition bg-amber-800 text-white' : 'px-4 py-2 font-bold rounded-lg transition text-gray-600 hover:bg-gray-100';
+      document.getElementById('tabCategories').className = tab === 'categories' ? 'px-4 py-2 font-bold rounded-lg transition bg-amber-800 text-white' : 'px-4 py-2 font-bold rounded-lg transition text-gray-600 hover:bg-gray-100';
+      document.getElementById('tabSettings').className = tab === 'settings' ? 'px-4 py-2 font-bold rounded-lg transition bg-amber-800 text-white' : 'px-4 py-2 font-bold rounded-lg transition text-gray-600 hover:bg-gray-100';
+    }
+
+    function toggleSelectAllOrders(source) {
+      const checkboxes = document.querySelectorAll('.order-checkbox');
+      checkboxes.forEach(cb => cb.checked = source.checked);
+    }
+
+    function deleteSelectedOrders() {
+      const selectedIds = Array.from(document.querySelectorAll('.order-checkbox:checked')).map(cb => cb.value);
+      if (selectedIds.length === 0) {
+        alert('請先勾選要刪除的訂單！');
+        return;
+      }
+      if (confirm(`確定要刪除勾選的 ${selectedIds.length} 筆訂單嗎？`)) {
+        orders = JSON.parse(localStorage.getItem('sh_orders')) || [];
+        orders = orders.filter(o => !selectedIds.includes(o.id));
+        localStorage.setItem('sh_orders', JSON.stringify(orders));
+        renderOrders();
+        document.getElementById('selectAllOrders').checked = false;
+      }
+    }
+
+    function deleteOrder(id) {
+      if (confirm('確定要刪除這筆訂單嗎？')) {
+        orders = JSON.parse(localStorage.getItem('sh_orders')) || [];
+        orders = orders.filter(o => o.id !== id);
+        localStorage.setItem('sh_orders', JSON.stringify(orders));
+        renderOrders();
+      }
+    }
+
+    function renderOrders() {
+      const tbody = document.getElementById('ordersTableBody');
+      orders = JSON.parse(localStorage.getItem('sh_orders')) || [];
+
+      if (orders.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-gray-400">目前尚無預約訂單</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = orders.map(o => `
+        <tr class="border-b hover:bg-gray-50">
+          <td class="p-3 text-center"><input type="checkbox" value="${o.id}" class="order-checkbox"></td>
+          <td class="p-3">
+            <span class="font-bold text-gray-800">${o.id}</span>
+            <div class="text-xs text-gray-400">${o.date}</div>
+          </td>
+          <td class="p-3">
+            <div class="font-bold text-gray-800">${o.custName}</div>
+            <div class="text-xs text-gray-500"><i class="fa-solid fa-phone text-amber-700"></i> ${o.custPhone}</div>
+          </td>
+          <td class="p-3 font-semibold text-amber-900">${o.pickupTime}</td>
+          <td class="p-3 text-xs text-gray-700 max-w-xs">${o.items}</td>
+          <td class="p-3 font-bold text-amber-800">${o.total}</td>
+          <td class="p-3">
+            <span class="px-2 py-1 text-xs font-bold rounded-full ${o.status === '已完成' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+              ${o.status}
+            </span>
+          </td>
+          <td class="p-3 text-right space-x-1">
+            <button onclick="toggleOrderStatus('${o.id}')" class="text-xs bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded transition">切換狀態</button>
+            <button onclick="deleteOrder('${o.id}')" class="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-2 py-1 rounded transition">刪除</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function renderCategoriesAdmin() {
+      const tbody = document.getElementById('categoriesTableBody');
+      categories = JSON.parse(localStorage.getItem('sh_categories')) || defaultCategories;
+
+      tbody.innerHTML = categories.map((cat, index) => `
+        <tr class="border-b hover:bg-gray-50">
+          <td class="p-3 font-bold text-gray-800">${cat}</td>
+          <td class="p-3 text-right space-x-2">
+            <button onclick="editCategoryPrompt(${index})" class="text-xs bg-amber-100 hover:bg-amber-200 text-amber-900 px-2.5 py-1 rounded font-bold transition">修改名稱</button>
+            <button onclick="deleteCategory(${index})" class="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-2.5 py-1 rounded font-bold transition">刪除</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function openAddCategoryPrompt() {
+      const newCat = prompt('請輸入要新增的前台商品分類名稱：');
+      if (newCat && newCat.trim() !== '') {
+        categories = JSON.parse(localStorage.getItem('sh_categories')) || defaultCategories;
+        if (categories.includes(newCat.trim())) { alert('該分類名稱已存在！'); return; }
+        categories.push(newCat.trim());
+        localStorage.setItem('sh_categories', JSON.stringify(categories));
+        renderCategoriesAdmin();
+        renderCategories();
+      }
+    }
+
+    function editCategoryPrompt(index) {
+      categories = JSON.parse(localStorage.getItem('sh_categories')) || defaultCategories;
+      const oldCat = categories[index];
+      const updatedCat = prompt('請輸入修改後的分類名稱：', oldCat);
+      if (updatedCat && updatedCat.trim() !== '' && updatedCat !== oldCat) {
+        categories[index] = updatedCat.trim();
+        localStorage.setItem('sh_categories', JSON.stringify(categories));
+        renderCategoriesAdmin();
+        renderCategories();
+      }
+    }
+
+    function deleteCategory(index) {
+      if (confirm('確定要刪除此分類嗎？')) {
+        categories = JSON.parse(localStorage.getItem('sh_categories')) || defaultCategories;
+        categories.splice(index, 1);
+        localStorage.setItem('sh_categories', JSON.stringify(categories));
+        renderCategoriesAdmin();
+        renderCategories();
+      }
+    }
+
+    function renderProductsAdmin() {
+      const tbody = document.getElementById('productsTableBody');
+      products = JSON.parse(localStorage.getItem('sh_products')) || defaultProducts;
+
+      tbody.innerHTML = products.map(p => {
+        const unitDisplay = (p.units || []).map(u => `${u.name}: ${u.isOnSite ? '現場計價' : '$' + u.price}`).join('、');
+        return `
+          <tr class="border-b hover:bg-gray-50">
+            <td class="p-3">
+              <img src="${p.image}" class="w-12 h-12 rounded object-cover border" onerror="this.src='https://via.placeholder.com/80?text=無圖'">
+            </td>
+            <td class="p-3">
+              <div class="font-bold text-gray-800">${p.name}</div>
+              <div class="text-xs text-amber-800 font-medium">${p.desc || '（無備註）'}</div>
+            </td>
+            <td class="p-3"><span class="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-xs font-semibold">${p.category}</span></td>
+            <td class="p-3"><span class="bg-amber-100 text-amber-900 px-2 py-0.5 rounded text-xs font-bold">${p.internalCat || '一般商品'}</span></td>
+            <td class="p-3 text-xs">${unitDisplay}</td>
+            <td class="p-3 text-right space-x-2">
+              <button onclick="editProduct('${p.id}')" class="text-xs bg-amber-100 hover:bg-amber-200 text-amber-900 px-2.5 py-1 rounded font-bold transition">編輯</button>
+              <button onclick="deleteProduct('${p.id}')" class="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-2.5 py-1 rounded font-bold transition">刪除</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // 單位列新增（支援獨立設定現場計價）
+    function addUnitRow(name = '', price = '', isOnSite = false) {
+      const container = document.getElementById('unitRowsContainer');
+      const div = document.createElement('div');
+      div.className = 'flex items-center space-x-2 unit-row bg-white p-2 rounded border';
+      div.innerHTML = `
+        <input type="text" placeholder="單位 (如: 斤, 顆)" value="${name}" class="unit-name-input w-1/3 px-2 py-1 border rounded text-xs outline-none" required>
+        <input type="number" min="0" placeholder="價格 ($)" value="${price}" class="unit-price-input w-1/3 px-2 py-1 border rounded text-xs outline-none" ${isOnSite ? 'disabled' : ''}>
+        <label class="flex items-center space-x-1 text-[11px] font-bold text-blue-700 cursor-pointer w-1/3">
+          <input type="checkbox" class="unit-onsite-checkbox w-3.5 h-3.5 rounded text-blue-600" ${isOnSite ? 'checked' : ''} onchange="toggleUnitOnSite(this)">
+          <span>現場計價</span>
+        </label>
+        <button type="button" onclick="this.parentElement.remove()" class="text-red-500 hover:text-red-700 font-bold px-1">&times;</button>
+      `;
+      container.appendChild(div);
+    }
+
+    function toggleUnitOnSite(checkbox) {
+      const row = checkbox.closest('.unit-row');
+      const priceInput = row.querySelector('.unit-price-input');
+      priceInput.disabled = checkbox.checked;
+      if (checkbox.checked) priceInput.value = '0';
+    }
+
+    function openProductModal() {
+      document.getElementById('productForm').reset();
+      document.getElementById('prodId').value = '';
+      document.getElementById('modalTitle').innerText = '新增食材品項';
+      document.getElementById('prodDesc').value = '';
+      document.getElementById('prodInternalCat').value = '一般商品（不需特別備註）';
+      
+      const catSelect = document.getElementById('prodCategory');
+      categories = JSON.parse(localStorage.getItem('sh_categories')) || defaultCategories;
+      catSelect.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
+
+      document.getElementById('unitRowsContainer').innerHTML = '';
+      addUnitRow('斤', '', false);
+      currentUploadedImageBase64 = '';
+      document.getElementById('productModal').classList.remove('hidden');
+    }
+
+    function closeProductModal() {
+      document.getElementById('productModal').classList.add('hidden');
+    }
+
+    function openExportModal(mode) {
+      exportMode = mode;
+      if (mode === 'batch') {
+        const selectedCount = document.querySelectorAll('.order-checkbox:checked').length;
+        if (selectedCount === 0) {
+          alert('請先在訂單列表中勾選要匯出的訂單！');
+          return;
+        }
+        document.getElementById('exportModalDesc').innerText = `已勾選 ${selectedCount} 筆訂單，請選擇匯出格式：`;
+      } else {
+        document.getElementById('exportModalDesc').innerText = '請選擇要匯出的格式：';
+      }
+      document.getElementById('exportModal').classList.remove('hidden');
+    }
+
+    function closeExportModal() {
+      document.getElementById('exportModal').classList.add('hidden');
+    }
+
+    function handleImageUpload(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onloadend = function() { currentUploadedImageBase64 = reader.result; }
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function saveProduct(e) {
+      e.preventDefault();
+      const id = document.getElementById('prodId').value || Date.now().toString();
+      const name = document.getElementById('prodName').value;
+      const desc = document.getElementById('prodDesc').value;
+      const category = document.getElementById('prodCategory').value;
+      const internalCat = document.getElementById('prodInternalCat').value;
+      const imageUrlInput = document.getElementById('prodImageUrl').value;
+
+      const unitRows = document.querySelectorAll('.unit-row');
+      const units = [];
+      unitRows.forEach(row => {
+        const uName = row.querySelector('.unit-name-input').value.trim();
+        const isOnSite = row.querySelector('.unit-onsite-checkbox').checked;
+        const uPrice = isOnSite ? 0 : parseFloat(row.querySelector('.unit-price-input').value);
+        if (uName && (isOnSite || !isNaN(uPrice))) {
+          units.push({ name: uName, price: uPrice, isOnSite });
+        }
+      });
+
+      if (units.length === 0) {
+        alert('請至少新增一個計價單位！');
+        return;
+      }
+
+      const finalImage = currentUploadedImageBase64 || imageUrlInput || 'https://via.placeholder.com/300x200?text=新鮮食材';
+      const productObj = { id, name, desc, category, internalCat, units, image: finalImage };
+
+      products = JSON.parse(localStorage.getItem('sh_products')) || defaultProducts;
+      const index = products.findIndex(p => p.id === id);
+      if (index >= 0) { products[index] = productObj; } else { products.push(productObj); }
+
+      localStorage.setItem('sh_products', JSON.stringify(products));
+      renderProductsAdmin();
+      renderProducts();
+      closeProductModal();
+    }
+
+    function editProduct(id) {
+      products = JSON.parse(localStorage.getItem('sh_products')) || defaultProducts;
+      const p = products.find(prod => prod.id === id);
+      if (!p) return;
+
+      const catSelect = document.getElementById('prodCategory');
+      categories = JSON.parse(localStorage.getItem('sh_categories')) || defaultCategories;
+      catSelect.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
+
+      document.getElementById('prodId').value = p.id;
+      document.getElementById('prodName').value = p.name;
+      document.getElementById('prodDesc').value = p.desc || '';
+      document.getElementById('prodCategory').value = p.category;
+      document.getElementById('prodInternalCat').value = p.internalCat || '一般商品（不需特別備註）';
+      document.getElementById('prodImageUrl').value = p.image.startsWith('data:') ? '' : p.image;
+
+      const container = document.getElementById('unitRowsContainer');
+      container.innerHTML = '';
+      const units = p.units && p.units.length > 0 ? p.units : [{ name: '斤', price: p.price || 0, isOnSite: false }];
+      units.forEach(u => addUnitRow(u.name, u.price, u.isOnSite));
+
+      document.getElementById('modalTitle').innerText = '編輯食材品項';
+      document.getElementById('productModal').classList.remove('hidden');
+    }
+
+    function deleteProduct(id) {
+      if (confirm('確定要刪除此食材嗎？')) {
+        products = JSON.parse(localStorage.getItem('sh_products')) || defaultProducts;
+        products = products.filter(p => p.id !== id);
+        localStorage.setItem('sh_products', JSON.stringify(products));
+        renderProductsAdmin();
+        renderProducts();
+      }
+    }
+
+    function toggleOrderStatus(id) {
+      orders = JSON.parse(localStorage.getItem('sh_orders')) || [];
+      const order = orders.find(o => o.id === id);
+      if (order) {
+        order.status = order.status === '待處理' ? '已完成' : '待處理';
+        localStorage.setItem('sh_orders', JSON.stringify(orders));
+        renderOrders();
+      }
+    }
+
+    function executeExport(type) {
+      orders = JSON.parse(localStorage.getItem('sh_orders')) || [];
+      let targetOrders = orders;
+
+      if (exportMode === 'batch') {
+        const selectedIds = Array.from(document.querySelectorAll('.order-checkbox:checked')).map(cb => cb.value);
+        targetOrders = orders.filter(o => selectedIds.includes(o.id));
+      }
+
+      if (targetOrders.length === 0) {
+        alert('沒有可匯出的訂單資料');
+        return;
+      }
+
+      if (type === 'all') {
+        let csvContent = "\uFEFF訂單編號,訂購時間,顧客姓名,聯絡電話,取貨時間,訂購食材摘要,總金額,訂單狀態\n";
+        targetOrders.forEach(o => {
+          const row = [`"${o.id}"`, `"${o.date}"`, `"${o.custName}"`, `"${o.custPhone}"`, `"${o.pickupTime}"`, `"${o.items.replace(/"/g, '""')}"`, `"${o.total}"`, `"${o.status}"`];
+          csvContent += row.join(",") + "\n";
+        });
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `隨喜商行_選取訂單_${new Date().toISOString().slice(0,10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        let contentHtml = `
+          <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+          <head><meta charset='utf-8'><title>${type}</title></head>
+          <body style="font-family: 'Microsoft JhengHei', Arial; padding: 20px;">
+            <h2 style="text-align: center; color: #78350f;">隨喜商行 - ${type}備貨清單</h2>
+            <p style="text-align: center; font-size: 12px; color: #666;">列印日期：${new Date().toLocaleString('zh-TW')}</p>
+            <hr style="border: 1px solid #d97706; margin-bottom: 20px;">
+            <table border="1" cellspacing="0" cellpadding="8" style="width: 100%; border-collapse: collapse; border-color: #ccc; font-size: 14px;">
+              <thead>
+                <tr style="background-color: #fef3c7; color: #78350f;">
+                  <th style="padding: 10px; text-align: left;">篩選類別明細（含客名附註）</th>
+                </tr>
+              </thead>
+              <tbody>
+        `;
+
+        let hasData = false;
+        targetOrders.forEach(o => {
+          if (!o.rawItems) return;
+          const matchedItems = o.rawItems.filter(item => item.internalCat === type);
+          if (matchedItems.length > 0) {
+            hasData = true;
+            const itemsWithCustName = matchedItems.map(i => `${i.name} x ${i.qty}${i.unitName} (${o.custName})`).join('、');
+            contentHtml += `<tr><td style="padding: 10px; border-bottom: 1px solid #eee;">${itemsWithCustName}</td></tr>`;
+          }
+        });
+
+        if (!hasData) {
+          contentHtml += `<tr><td style="padding: 20px; text-align: center; color: #999;">所選訂單中無符合 ${type} 的品項資料</td></tr>`;
+        }
+
+        contentHtml += `</tbody></table></body></html>`;
+
+        const blob = new Blob(['\ufeff' + contentHtml], { type: 'application/msword' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `隨喜商行_${type}_${new Date().toISOString().slice(0,10)}.doc`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
+      closeExportModal();
+    }
+
+    window.onload = init;
+  </script>
+</body>
+</html>
