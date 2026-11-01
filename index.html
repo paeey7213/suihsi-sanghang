@@ -18,15 +18,15 @@
 
   <!-- Header Section -->
   <header class="bg-white shadow-sm border-b border-amber-100 sticky top-0 z-30">
-    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-      <div class="flex items-center space-x-3">
-        <img id="siteLogoImg" src="https://i.imgur.com/uR4K2uM.png" alt="隨喜商行" class="h-12 w-auto object-contain rounded-md" onerror="this.src='https://via.placeholder.com/150x60?text=隨喜商行'">
-        <span class="text-xl font-black text-amber-950 tracking-wider">隨喜商行</span>
+    <div class="max-w-5xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between gap-2">
+      <div class="flex items-center space-x-2 sm:space-x-3 shrink-0">
+        <img id="siteLogoImg" src="https://i.imgur.com/uR4K2uM.png" alt="隨喜商行" class="h-10 sm:h-12 w-auto object-contain rounded-md" onerror="this.src='https://via.placeholder.com/150x60?text=隨喜商行'">
+        <span class="text-lg sm:text-xl font-black text-amber-950 tracking-wider">隨喜商行</span>
       </div>
       
       <div class="flex items-center space-x-2">
-        <button onclick="toggleCartModal()" class="relative p-2 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-full transition shadow-sm">
-          <i class="fa-solid fa-cart-shopping text-xl"></i>
+        <button onclick="toggleCartModal()" class="relative p-2.5 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-full transition shadow-sm touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center">
+          <i class="fa-solid fa-cart-shopping text-lg sm:text-xl"></i>
           <span id="cartBadge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white">0</span>
         </button>
       </div>
@@ -34,26 +34,37 @@
   </header>
 
   <!-- Main Content -->
-  <main class="max-w-5xl mx-auto px-4 py-6 flex-grow w-full">
-    <div class="flex space-x-2 overflow-x-auto no-scrollbar mb-6 pb-2 border-b border-amber-200/60" id="categoryContainer"></div>
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="productGrid"></div>
+  <main class="max-w-5xl mx-auto px-3 sm:px-4 py-4 sm:py-6 flex-grow w-full">
+    <!-- 新增功能二：搜尋欄位 -->
+    <div class="mb-4">
+      <div class="relative">
+        <input type="text" id="searchInput" oninput="handleSearch()" placeholder="🔍 搜尋商品名稱..." class="w-full pl-10 pr-10 py-2.5 sm:py-2 text-sm border border-amber-200 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none bg-white shadow-sm">
+        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"></i>
+        <button id="clearSearchBtn" onclick="clearSearch()" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1">
+          <i class="fa-solid fa-circle-xmark"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="flex space-x-2 overflow-x-auto no-scrollbar mb-4 sm:mb-6 pb-2 border-b border-amber-200/60" id="categoryContainer"></div>
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4" id="productGrid"></div>
   </main>
 
   <!-- Footer -->
   <footer class="bg-amber-900 text-amber-100 mt-12 py-6 border-t border-amber-800">
     <div class="max-w-5xl mx-auto px-4 flex justify-between items-center text-sm">
       <p class="font-medium">© 隨喜商行 Suihsi Market. 版權所有</p>
-      <button onclick="openAdminLogin()" class="text-amber-300 hover:text-white text-xs bg-amber-800 px-2 py-1 rounded transition flex items-center gap-1">
+      <button onclick="openAdminLogin()" class="text-amber-300 hover:text-white text-xs bg-amber-800 px-2.5 py-1.5 rounded transition flex items-center gap-1 touch-manipulation">
         <i class="fa-solid fa-lock"></i> 管理員後台
       </button>
     </div>
   </footer>
 
   <!-- Floating Cart Button for Mobile -->
-  <div class="fixed bottom-6 right-6 z-20 md:hidden">
-    <button onclick="toggleCartModal()" class="bg-amber-700 hover:bg-amber-800 text-white font-bold px-5 py-3 rounded-full shadow-lg flex items-center space-x-2">
-      <i class="fa-solid fa-basket-shopping"></i>
-      <span>預約清單</span>
+  <div class="fixed bottom-5 right-4 z-20 md:hidden">
+    <button onclick="toggleCartModal()" class="bg-amber-700 active:bg-amber-800 text-white font-bold px-4 py-3 rounded-full shadow-lg flex items-center space-x-2 touch-manipulation">
+      <i class="fa-solid fa-basket-shopping text-lg"></i>
+      <span class="text-sm">預約清單</span>
       <span id="floatingCartBadge" class="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">0</span>
     </button>
   </div>
@@ -63,7 +74,7 @@
     <div class="bg-white w-full max-w-md h-full flex flex-col shadow-2xl transition-transform">
       <div class="p-4 bg-amber-800 text-white flex justify-between items-center">
         <h2 class="text-lg font-bold flex items-center gap-2"><i class="fa-solid fa-basket-shopping"></i> 您的預約清單</h2>
-        <button onclick="toggleCartModal()" class="text-amber-200 hover:text-white text-2xl font-bold">&times;</button>
+        <button onclick="toggleCartModal()" class="text-amber-200 hover:text-white text-2xl font-bold p-1 touch-manipulation">&times;</button>
       </div>
 
       <div class="p-4 flex-grow overflow-y-auto" id="cartItemsContainer"></div>
@@ -94,7 +105,7 @@
             </select>
           </div>
 
-          <button type="submit" class="w-full bg-amber-700 hover:bg-amber-800 text-white font-bold py-3 rounded-md shadow-md transition text-center mt-2">
+          <button type="submit" class="w-full bg-amber-700 hover:bg-amber-800 text-white font-bold py-3 rounded-md shadow-md transition text-center mt-2 touch-manipulation">
             確認送出食材預約
           </button>
         </form>
@@ -107,7 +118,7 @@
     <div class="bg-white w-full max-w-sm rounded-xl shadow-xl overflow-hidden p-6 space-y-4">
       <div class="flex justify-between items-center border-b pb-3">
         <h3 class="font-bold text-lg text-gray-800"><i class="fa-solid fa-lock text-amber-700"></i> 管理員登入</h3>
-        <button onclick="closeAdminLogin()" class="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+        <button onclick="closeAdminLogin()" class="text-gray-400 hover:text-gray-600 text-xl p-1">&times;</button>
       </div>
       <div>
         <label class="block text-xs font-bold text-gray-700 mb-1">請輸入管理員密碼</label>
@@ -123,56 +134,62 @@
   <!-- Admin Panel Modal -->
   <div id="adminPanelModal" class="fixed inset-0 bg-gray-100 z-50 hidden flex flex-col overflow-y-auto">
     <header class="bg-gray-900 text-white shadow-md sticky top-0 z-10">
-      <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
-        <div class="flex items-center space-x-3">
-          <i class="fa-solid fa-sliders text-amber-500 text-2xl"></i>
-          <h1 class="text-xl font-bold tracking-wide">隨喜商行 · 後台管理系統 (Supabase 雲端同步)</h1>
+      <div class="max-w-6xl mx-auto px-4 py-3 sm:py-4 flex justify-between items-center">
+        <div class="flex items-center space-x-2 sm:space-x-3">
+          <i class="fa-solid fa-sliders text-amber-500 text-xl sm:text-2xl"></i>
+          <h1 class="text-base sm:text-xl font-bold tracking-wide">隨喜商行 · 後台管理系統</h1>
         </div>
-        <button onclick="closeAdminPanel()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-xs font-bold transition">
-          <i class="fa-solid fa-right-from-bracket"></i> 關閉後台返回前台
+        <button onclick="closeAdminPanel()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-xs font-bold transition flex items-center gap-1 touch-manipulation">
+          <i class="fa-solid fa-right-from-bracket"></i> 關閉返回前台
         </button>
       </div>
     </header>
 
-    <main class="max-w-6xl mx-auto px-4 py-6 space-y-8 w-full flex-grow">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-xl shadow-sm border">
-        <div class="flex flex-wrap gap-2 border-b sm:border-b-0 pb-2 sm:pb-0">
-          <button onclick="switchAdminTab('orders')" id="tabOrders" class="px-4 py-2 font-bold rounded-lg transition bg-amber-800 text-white">
+    <main class="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-6 sm:space-y-8 w-full flex-grow">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-3 sm:p-4 rounded-xl shadow-sm border">
+        <div class="flex flex-wrap gap-1.5 sm:gap-2 border-b sm:border-b-0 pb-2 sm:pb-0">
+          <button onclick="switchAdminTab('orders')" id="tabOrders" class="px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold rounded-lg transition bg-amber-800 text-white touch-manipulation">
             <i class="fa-solid fa-list-check mr-1"></i> 訂單管理
           </button>
-          <button onclick="switchAdminTab('products')" id="tabProducts" class="px-4 py-2 font-bold rounded-lg transition text-gray-600 hover:bg-gray-100">
-            <i class="fa-solid fa-boxes-packing mr-1"></i> 商品與定價管理
+          <button onclick="switchAdminTab('products')" id="tabProducts" class="px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold rounded-lg transition text-gray-600 hover:bg-gray-100 touch-manipulation">
+            <i class="fa-solid fa-boxes-packing mr-1"></i> 商品與定價
           </button>
-          <button onclick="switchAdminTab('categories')" id="tabCategories" class="px-4 py-2 font-bold rounded-lg transition text-gray-600 hover:bg-gray-100">
-            <i class="fa-solid fa-tags mr-1"></i> 前台分類管理
+
+          <!-- 新增功能一：自訂群組分頁按鈕 -->
+          <button onclick="switchAdminTab('customGroups')" id="tabCustomGroups" class="px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold rounded-lg transition text-gray-600 hover:bg-gray-100 touch-manipulation">
+            <i class="fa-solid fa-layer-group mr-1"></i> 自訂匯出群組
           </button>
-          <button onclick="switchAdminTab('settings')" id="tabSettings" class="px-4 py-2 font-bold rounded-lg transition text-gray-600 hover:bg-gray-100">
-            <i class="fa-solid fa-gear mr-1"></i> 系統與密碼設定
+
+          <button onclick="switchAdminTab('categories')" id="tabCategories" class="px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold rounded-lg transition text-gray-600 hover:bg-gray-100 touch-manipulation">
+            <i class="fa-solid fa-tags mr-1"></i> 前台分類
+          </button>
+          <button onclick="switchAdminTab('settings')" id="tabSettings" class="px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold rounded-lg transition text-gray-600 hover:bg-gray-100 touch-manipulation">
+            <i class="fa-solid fa-gear mr-1"></i> 系統與密碼
           </button>
         </div>
       </div>
 
       <!-- Orders Section -->
-      <section id="sectionOrders" class="bg-white rounded-xl shadow-sm border p-4 sm:p-6 space-y-4">
+      <section id="sectionOrders" class="bg-white rounded-xl shadow-sm border p-3 sm:p-6 space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+          <h2 class="text-base sm:text-lg font-bold text-gray-800 flex items-center gap-2">
             <i class="fa-solid fa-receipt text-amber-700"></i> 即時訂單列表 (雲端同步)
           </h2>
           <div class="flex items-center space-x-2">
-            <button onclick="openExportModal('batch')" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1">
-              <i class="fa-solid fa-file-excel"></i> 批量/選取匯出
+            <button onclick="openExportModal('batch')" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-2 rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1 touch-manipulation">
+              <i class="fa-solid fa-file-export"></i> 批量/選取匯出
             </button>
-            <button onclick="deleteSelectedOrders()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1">
+            <button onclick="deleteSelectedOrders()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1 touch-manipulation">
               <i class="fa-solid fa-trash"></i> 批量刪除勾選
             </button>
           </div>
         </div>
 
         <div class="overflow-x-auto">
-          <table class="w-full text-left text-sm text-gray-600">
+          <table class="w-full text-left text-xs sm:text-sm text-gray-600 min-w-[650px]">
             <thead class="bg-gray-50 text-gray-700 uppercase font-bold text-xs border-b">
               <tr>
-                <th class="p-3 w-10 text-center"><input type="checkbox" id="selectAllOrders" onclick="toggleSelectAllOrders(this)"></th>
+                <th class="p-3 w-10 text-center"><input type="checkbox" id="selectAllOrders" onclick="toggleSelectAllOrders(this)" class="w-4 h-4"></th>
                 <th class="p-3">編號/時間</th>
                 <th class="p-3">顧客資訊</th>
                 <th class="p-3">預約取貨時間</th>
@@ -188,17 +205,17 @@
       </section>
 
       <!-- Products Management Section -->
-      <section id="sectionProducts" class="bg-white rounded-xl shadow-sm border p-4 sm:p-6 hidden">
+      <section id="sectionProducts" class="bg-white rounded-xl shadow-sm border p-3 sm:p-6 hidden">
         <div class="flex justify-between items-center mb-6">
-          <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+          <h2 class="text-base sm:text-lg font-bold text-gray-800 flex items-center gap-2">
             <i class="fa-solid fa-wheat-awn text-amber-700"></i> 食材、備註與多單位價格管理
           </h2>
-          <button onclick="openProductModal()" class="bg-amber-800 hover:bg-amber-900 text-white px-4 py-2 rounded-lg text-sm font-bold transition flex items-center gap-1 shadow-sm">
+          <button onclick="openProductModal()" class="bg-amber-800 hover:bg-amber-900 text-white px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold transition flex items-center gap-1 shadow-sm touch-manipulation">
             <i class="fa-solid fa-plus"></i> 新增食材品項
           </button>
         </div>
         <div class="overflow-x-auto">
-          <table class="w-full text-left text-sm text-gray-600">
+          <table class="w-full text-left text-xs sm:text-sm text-gray-600 min-w-[700px]">
             <thead class="bg-gray-50 text-gray-700 uppercase font-bold text-xs border-b">
               <tr>
                 <th class="p-3">圖片</th>
@@ -206,6 +223,8 @@
                 <th class="p-3">前台分類</th>
                 <th class="p-3">內部生產分類</th>
                 <th class="p-3">單位與價格 / 時價設定</th>
+                <!-- 新增功能四：狀態欄位 Header -->
+                <th class="p-3">狀態</th>
                 <th class="p-3 text-right">操作</th>
               </tr>
             </thead>
@@ -214,18 +233,45 @@
         </div>
       </section>
 
+      <!-- 新增功能一：自訂商品區域分類（群組）管理 Section -->
+      <section id="sectionCustomGroups" class="bg-white rounded-xl shadow-sm border p-3 sm:p-6 hidden">
+        <div class="flex justify-between items-center mb-4 pb-3 border-b">
+          <div>
+            <h2 class="text-base sm:text-lg font-bold text-gray-800 flex items-center gap-2">
+              <i class="fa-solid fa-layer-group text-amber-700"></i> 自訂商品區域分類（匯出群組管理）
+            </h2>
+            <p class="text-xs text-gray-500 mt-1">勾選商品分類為群組後，可在訂單管理匯出該群組的 Word 數量加總報表。</p>
+          </div>
+          <button onclick="openCustomGroupModal()" class="bg-amber-800 hover:bg-amber-900 text-white px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold transition flex items-center gap-1 shadow-sm touch-manipulation">
+            <i class="fa-solid fa-plus"></i> 新增群組
+          </button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs sm:text-sm text-gray-600 min-w-[500px]">
+            <thead class="bg-gray-50 text-gray-700 uppercase font-bold text-xs border-b">
+              <tr>
+                <th class="p-3">群組名稱</th>
+                <th class="p-3">包含商品</th>
+                <th class="p-3 text-right">操作</th>
+              </tr>
+            </thead>
+            <tbody id="customGroupsTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
       <!-- Categories Management Section -->
-      <section id="sectionCategories" class="bg-white rounded-xl shadow-sm border p-6 space-y-6 hidden max-w-2xl">
+      <section id="sectionCategories" class="bg-white rounded-xl shadow-sm border p-4 sm:p-6 space-y-6 hidden max-w-2xl">
         <div class="flex justify-between items-center border-b pb-3">
-          <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+          <h2 class="text-base sm:text-lg font-bold text-gray-800 flex items-center gap-2">
             <i class="fa-solid fa-tags text-amber-700"></i> 前台商品分類管理
           </h2>
-          <button onclick="openAddCategoryPrompt()" class="bg-amber-800 hover:bg-amber-900 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1">
+          <button onclick="openAddCategoryPrompt()" class="bg-amber-800 hover:bg-amber-900 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 touch-manipulation">
             <i class="fa-solid fa-plus"></i> 新增分類
           </button>
         </div>
         <div class="overflow-x-auto">
-          <table class="w-full text-left text-sm text-gray-600">
+          <table class="w-full text-left text-xs sm:text-sm text-gray-600">
             <thead class="bg-gray-50 text-gray-700 uppercase font-bold text-xs border-b">
               <tr>
                 <th class="p-3">分類名稱</th>
@@ -238,8 +284,8 @@
       </section>
 
       <!-- Settings Section -->
-      <section id="sectionSettings" class="bg-white rounded-xl shadow-sm border p-6 space-y-6 hidden max-w-xl">
-        <h2 class="text-lg font-bold text-gray-800 border-b pb-3 flex items-center gap-2">
+      <section id="sectionSettings" class="bg-white rounded-xl shadow-sm border p-4 sm:p-6 space-y-6 hidden max-w-xl">
+        <h2 class="text-base sm:text-lg font-bold text-gray-800 border-b pb-3 flex items-center gap-2">
           <i class="fa-solid fa-gear text-amber-700"></i> 網站商標與安全密碼設定
         </h2>
         <div class="space-y-2">
@@ -249,7 +295,7 @@
             <input type="file" id="logoImageFile" accept="image/*" onchange="handleLogoUpload(event)" class="text-xs text-gray-500">
           </div>
           <input type="url" id="logoImageUrlInput" placeholder="或貼上圖片網址 https://" class="w-full px-3 py-2 border rounded-md text-sm outline-none mt-1">
-          <button onclick="saveLogo()" class="px-4 py-2 bg-amber-800 hover:bg-amber-900 text-white rounded-md text-xs font-bold transition mt-2">儲存並同步全站商標</button>
+          <button onclick="saveLogo()" class="px-4 py-2 bg-amber-800 hover:bg-amber-900 text-white rounded-md text-xs font-bold transition mt-2 touch-manipulation">儲存並同步全站商標</button>
         </div>
         <hr class="my-4">
         <div class="space-y-3">
@@ -266,7 +312,7 @@
             <label class="block text-xs text-gray-600 mb-1">確認新密碼 *</label>
             <input type="password" id="confirmAdminPwd" placeholder="再次輸入新密碼" class="w-full px-3 py-2 border rounded-md text-sm outline-none">
           </div>
-          <button onclick="saveNewPasswordWithValidation()" class="px-4 py-2 bg-amber-800 hover:bg-amber-900 text-white rounded-md text-xs font-bold transition">驗證舊密碼並更新</button>
+          <button onclick="saveNewPasswordWithValidation()" class="px-4 py-2 bg-amber-800 hover:bg-amber-900 text-white rounded-md text-xs font-bold transition touch-manipulation">驗證舊密碼並更新</button>
         </div>
       </section>
     </main>
@@ -274,32 +320,37 @@
 
   <!-- Export Selection Modal -->
   <div id="exportModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-md rounded-xl shadow-xl overflow-hidden p-6 space-y-4">
-      <div class="flex justify-between items-center border-b pb-3">
+    <div class="bg-white w-full max-w-md rounded-xl shadow-xl overflow-hidden p-6 space-y-4 max-h-[85vh] flex flex-col">
+      <div class="flex justify-between items-center border-b pb-3 shrink-0">
         <h3 class="font-bold text-lg text-gray-800"><i class="fa-solid fa-file-arrow-down text-emerald-700"></i> 匯出報表類型</h3>
-        <button onclick="closeExportModal()" class="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+        <button onclick="closeExportModal()" class="text-gray-400 hover:text-gray-600 text-xl p-1">&times;</button>
       </div>
-      <p id="exportModalDesc" class="text-xs text-gray-500">請選擇要匯出的格式：</p>
-      <div class="space-y-2">
-        <button onclick="executeExport('all')" class="w-full text-left px-4 py-3 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg font-bold text-amber-900 transition flex items-center justify-between">
+      <p id="exportModalDesc" class="text-xs text-gray-500 shrink-0">請選擇要匯出的格式：</p>
+      
+      <div class="space-y-2 overflow-y-auto flex-grow pr-1" id="exportOptionsContainer">
+        <button onclick="executeExport('all')" class="w-full text-left px-4 py-3 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg font-bold text-amber-900 transition flex items-center justify-between touch-manipulation">
           <span>完整訂單 (Excel / CSV)</span>
           <i class="fa-solid fa-file-excel text-emerald-700"></i>
         </button>
-        <button onclick="executeExport('老闆單')" class="w-full text-left px-4 py-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg font-bold text-blue-900 transition flex items-center justify-between">
+        <button onclick="executeExport('老闆單')" class="w-full text-left px-4 py-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg font-bold text-blue-900 transition flex items-center justify-between touch-manipulation">
           <span>老闆單 (Word 檔)</span>
           <i class="fa-solid fa-file-word text-blue-700"></i>
         </button>
-        <button onclick="executeExport('老闆娘單')" class="w-full text-left px-4 py-3 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg font-bold text-purple-900 transition flex items-center justify-between">
+        <button onclick="executeExport('老闆娘單')" class="w-full text-left px-4 py-3 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg font-bold text-purple-900 transition flex items-center justify-between touch-manipulation">
           <span>老闆娘單 (Word 檔)</span>
           <i class="fa-solid fa-file-word text-purple-700"></i>
         </button>
-        <button onclick="executeExport('麵單')" class="w-full text-left px-4 py-3 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg font-bold text-emerald-900 transition flex items-center justify-between">
+        <button onclick="executeExport('麵單')" class="w-full text-left px-4 py-3 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg font-bold text-emerald-900 transition flex items-center justify-between touch-manipulation">
           <span>麵單 (Word 檔)</span>
           <i class="fa-solid fa-file-word text-emerald-700"></i>
         </button>
+
+        <!-- 新增功能一：自訂群組動態選單區塊 -->
+        <div id="customGroupExportButtons" class="pt-2 border-t space-y-2"></div>
       </div>
-      <div class="pt-2 text-right">
-        <button onclick="closeExportModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-bold">取消</button>
+
+      <div class="pt-2 text-right shrink-0">
+        <button onclick="closeExportModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-bold touch-manipulation">取消</button>
       </div>
     </div>
   </div>
@@ -309,7 +360,7 @@
     <div class="bg-white w-full max-w-lg rounded-xl shadow-xl overflow-hidden max-h-[90vh] flex flex-col">
       <div class="p-4 bg-gray-900 text-white flex justify-between items-center">
         <h3 class="font-bold text-lg" id="modalTitle">新增食材品項</h3>
-        <button onclick="closeProductModal()" class="text-gray-400 hover:text-white text-xl">&times;</button>
+        <button onclick="closeProductModal()" class="text-gray-400 hover:text-white text-xl p-1">&times;</button>
       </div>
       <form id="productForm" onsubmit="saveProduct(event)" class="p-6 space-y-4 overflow-y-auto">
         <input type="hidden" id="prodId">
@@ -343,8 +394,8 @@
         <!-- 單位與價格設定區 -->
         <div class="bg-gray-50 p-3 rounded-lg border space-y-3">
           <div class="flex justify-between items-center">
-            <label class="block text-xs font-bold text-gray-700">單位與價格設定（可勾選時價/現場報價）</label>
-            <button type="button" onclick="addUnitRow()" class="text-xs bg-amber-800 text-white px-2 py-1 rounded font-bold hover:bg-amber-900">
+            <label class="block text-xs font-bold text-gray-700">單位、最小進位與價格設定</label>
+            <button type="button" onclick="addUnitRow()" class="text-xs bg-amber-800 text-white px-2 py-1 rounded font-bold hover:bg-amber-900 touch-manipulation">
               <i class="fa-solid fa-plus text-[10px]"></i> 新增單位
             </button>
           </div>
@@ -359,9 +410,35 @@
 
         <div class="flex justify-end space-x-2 pt-4 border-t">
           <button type="button" onclick="closeProductModal()" class="px-4 py-2 border rounded-md text-sm font-bold text-gray-600 hover:bg-gray-100">取消</button>
-          <button type="submit" id="saveProductBtn" class="px-4 py-2 bg-amber-800 hover:bg-amber-900 text-white rounded-md text-sm font-bold shadow-sm">儲存設定</button>
+          <button type="submit" id="saveProductBtn" class="px-4 py-2 bg-amber-800 hover:bg-amber-900 text-white rounded-md text-sm font-bold shadow-sm touch-manipulation">儲存設定</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- 新增功能一：新增/編輯自訂群組 Modal -->
+  <div id="customGroupModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-lg rounded-xl shadow-xl overflow-hidden max-h-[85vh] flex flex-col">
+      <div class="p-4 bg-gray-900 text-white flex justify-between items-center">
+        <h3 class="font-bold text-lg" id="customGroupModalTitle">新增自訂匯出群組</h3>
+        <button onclick="closeCustomGroupModal()" class="text-gray-400 hover:text-white text-xl p-1">&times;</button>
+      </div>
+      <div class="p-6 space-y-4 overflow-y-auto flex-grow">
+        <input type="hidden" id="customGroupId">
+        <div>
+          <label class="block text-xs font-bold text-gray-700 mb-1">群組名稱 *</label>
+          <input type="text" id="customGroupName" placeholder="例如：滷味特選群組、熱銷肉類" class="w-full px-3 py-2 border rounded-md text-sm outline-none focus:ring-2 focus:ring-amber-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-gray-700 mb-2">請勾選要納入此群組的商品：</label>
+          <div id="customGroupProductCheckboxes" class="space-y-1.5 max-h-60 overflow-y-auto border p-3 rounded-lg bg-gray-50"></div>
+        </div>
+      </div>
+      <div class="p-4 border-t bg-gray-50 flex justify-end space-x-2">
+        <button onclick="closeCustomGroupModal()" class="px-4 py-2 border rounded-md text-sm font-bold text-gray-600 hover:bg-gray-100">取消</button>
+        <button onclick="saveCustomGroup()" class="px-4 py-2 bg-amber-800 hover:bg-amber-900 text-white rounded-md text-sm font-bold shadow-sm touch-manipulation">儲存群組</button>
+      </div>
     </div>
   </div>
 
@@ -374,15 +451,17 @@
 
     const defaultCategories = ['蔬菜', '肉類', '海鮮', '火鍋料', '麵粉乾貨', '水果'];
     const defaultProducts = [
-      { id: 1, name: '高麗菜', category: '蔬菜', internalCat: '老闆單', units: [{ name: '斤', price: 35, isOnSite: false }, { name: '半斤', price: 18, isOnSite: false }], desc: '高山產直脆甜', image: 'https://images.unsplash.com/photo-1594282486552-05b4d80fbb9f?w=400' }
+      { id: 1, name: '高麗菜', category: '蔬菜', internalCat: '老闆單', isUnlisted: false, units: [{ name: '斤', price: 35, isOnSite: false, minUnit: 0.5 }, { name: '半斤', price: 18, isOnSite: false, minUnit: 1 }], desc: '高山產直脆甜', image: 'https://images.unsplash.com/photo-1594282486552-05b4d80fbb9f?w=400' }
     ];
 
     let categories = [];
     let products = [];
     let orders = [];
+    let customGroups = []; // 新增功能一：自訂群組陣列
     let cart = [];
     let selectingUnitProduct = {};
     let currentCategory = '全部';
+    let searchQuery = ''; // 新增功能二：搜尋關鍵字
     let currentUploadedImageBase64 = '';
     let currentUploadedLogoBase64 = '';
     let exportMode = 'batch';
@@ -398,6 +477,7 @@
       updateCartUI();
       renderOrders();
       renderProductsAdmin();
+      renderCustomGroupsAdmin();
       renderCategoriesAdmin();
     }
 
@@ -420,12 +500,26 @@
             name: p.name,
             category: p.category,
             internalCat: p.internal_cat || '一般商品（不需特別備註）',
+            isUnlisted: !!p.is_unlisted, // 新增功能四：暫時下架
             desc: p.description || '',
             image: p.image || '',
-            units: p.units || []
+            units: (p.units || []).map(u => ({
+              ...u,
+              minUnit: u.minUnit !== undefined ? u.minUnit : (u.name.includes('斤') ? 0.5 : 1) // 新增功能三：預設最小單位
+            }))
           }));
         } else {
           products = defaultProducts;
+        }
+
+        // 新增功能一：讀取自訂群組
+        const { data: groupData, error: groupErr } = await supabaseClient.from('product_groups').select('*');
+        if (!groupErr && groupData) {
+          customGroups = groupData.map(g => ({
+            id: g.id,
+            name: g.name,
+            productNames: g.product_names || []
+          }));
         }
 
         // 讀取訂單
@@ -509,12 +603,27 @@
       document.getElementById('confirmAdminPwd').value = '';
     }
 
+    // 新增功能二：搜尋邏輯
+    function handleSearch() {
+      const val = document.getElementById('searchInput').value.trim();
+      searchQuery = val;
+      document.getElementById('clearSearchBtn').classList.toggle('hidden', val === '');
+      renderProducts();
+    }
+
+    function clearSearch() {
+      document.getElementById('searchInput').value = '';
+      searchQuery = '';
+      document.getElementById('clearSearchBtn').classList.add('hidden');
+      renderProducts();
+    }
+
     function renderCategories() {
       const container = document.getElementById('categoryContainer');
       const allCats = ['全部', ...categories];
 
       container.innerHTML = allCats.map(cat => `
-        <button onclick="selectCategory('${cat}')" class="px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition ${currentCategory === cat ? 'bg-amber-800 text-white shadow-sm' : 'bg-white text-gray-700 border border-gray-200 hover:bg-amber-50'}">
+        <button onclick="selectCategory('${cat}')" class="px-3.5 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-bold whitespace-nowrap transition touch-manipulation ${currentCategory === cat ? 'bg-amber-800 text-white shadow-sm' : 'bg-white text-gray-700 border border-gray-200 hover:bg-amber-50'}">
           ${cat}
         </button>
       `).join('');
@@ -528,70 +637,87 @@
 
     function renderProducts() {
       const grid = document.getElementById('productGrid');
-      const filtered = currentCategory === '全部' ? products : products.filter(p => p.category === currentCategory);
+      
+      // 新增功能四：前台過濾掉『已下架 (isUnlisted === true)』的商品
+      let filtered = products.filter(p => !p.isUnlisted);
 
+      if (currentCategory !== '全部') {
+        filtered = filtered.filter(p => p.category === currentCategory);
+      }
+
+      // 新增功能二：搜尋關鍵字過濾
+      if (searchQuery) {
+        filtered = filtered.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
+      }
+
+      // 新增功能二：查無此商品顯示
       if (filtered.length === 0) {
-        grid.innerHTML = `<div class="col-span-full text-center py-12 text-gray-500">此分類暫無商品</div>`;
+        grid.innerHTML = `
+          <div class="col-span-full text-center py-12 text-gray-500 bg-white rounded-xl border border-dashed p-6">
+            <i class="fa-solid fa-magnifying-glass text-3xl mb-2 text-amber-800/40"></i>
+            <p class="text-sm font-bold">${searchQuery ? '查無此商品' : '此分類暫無商品'}</p>
+          </div>
+        `;
         return;
       }
 
       grid.innerHTML = filtered.map(p => {
         const cartItem = cart.find(item => item.id == p.id);
         const qty = cartItem ? cartItem.qty : 0;
-        const selectedUnitObj = cartItem ? { name: cartItem.unitName, price: cartItem.unitPrice, isOnSite: cartItem.isOnSite } : null;
+        const selectedUnitObj = cartItem ? { name: cartItem.unitName, price: cartItem.unitPrice, isOnSite: cartItem.isOnSite, minUnit: cartItem.minUnit } : null;
         
-        const units = p.units && p.units.length > 0 ? p.units : [{ name: '斤', price: 0, isOnSite: false }];
+        const units = p.units && p.units.length > 0 ? p.units : [{ name: '斤', price: 0, isOnSite: false, minUnit: 0.5 }];
         const currentActiveUnit = selectedUnitObj || units[0];
         
         const displayPrice = currentActiveUnit.isOnSite ? '現場報價' : `NT$ ${currentActiveUnit.price}`;
         const displayUnitName = currentActiveUnit.name;
         const isSelectingUnit = selectingUnitProduct[p.id];
 
-        const isWeightUnit = displayUnitName.includes('斤');
-        const step = isWeightUnit ? 0.5 : 1;
+        // 新增功能三：使用個別單位對應的 minUnit 決定增減步階
+        const step = currentActiveUnit.minUnit !== undefined ? Number(currentActiveUnit.minUnit) : (displayUnitName.includes('斤') ? 0.5 : 1);
 
         return `
           <div class="bg-white rounded-xl shadow-sm border border-amber-100 overflow-hidden flex flex-col justify-between hover:shadow-md transition">
             <div>
-              <div class="h-36 w-full bg-gray-100 relative">
+              <div class="h-28 sm:h-36 w-full bg-gray-100 relative">
                 <img src="${p.image}" alt="${p.name}" class="w-full h-full object-cover" onerror="this.src='https://via.placeholder.com/300x200?text=新鮮食材'">
-                <span class="absolute top-2 left-2 bg-amber-800/80 text-white text-xs px-2 py-0.5 rounded-full backdrop-blur-sm">${p.category}</span>
+                <span class="absolute top-2 left-2 bg-amber-800/80 text-white text-[10px] sm:text-xs px-2 py-0.5 rounded-full backdrop-blur-sm">${p.category}</span>
               </div>
-              <div class="p-3">
-                <h3 class="font-bold text-gray-800 text-base">${p.name}</h3>
+              <div class="p-2.5 sm:p-3">
+                <h3 class="font-bold text-gray-800 text-sm sm:text-base line-clamp-1">${p.name}</h3>
                 
                 ${p.desc && p.desc.trim() !== '' ? `
-                  <p class="text-xs text-amber-900 bg-amber-50/80 px-2 py-1 rounded mt-1 font-medium border border-amber-100/60 line-clamp-2">
+                  <p class="text-[11px] sm:text-xs text-amber-900 bg-amber-50/80 px-2 py-1 rounded mt-1 font-medium border border-amber-100/60 line-clamp-2">
                     ${p.desc}
                   </p>
                 ` : ''}
 
-                <div class="mt-2 text-amber-800 font-extrabold text-lg">
+                <div class="mt-2 text-amber-800 font-extrabold text-base sm:text-lg">
                   ${displayPrice} <span class="text-xs font-normal text-gray-500">/ ${displayUnitName}</span>
                 </div>
               </div>
             </div>
 
-            <div class="p-3 pt-0">
+            <div class="p-2.5 sm:p-3 pt-0">
               ${qty > 0 ? `
                 <div class="flex items-center justify-between bg-amber-50 rounded-lg p-1 border border-amber-200 mt-2">
-                  <button onclick="updateQty('${p.id}', -${step})" class="w-8 h-8 rounded-md bg-white border border-gray-300 flex items-center justify-center font-bold text-amber-900 shadow-sm">-</button>
-                  <span class="font-bold text-amber-900 text-sm">${qty} ${displayUnitName}</span>
-                  <button onclick="updateQty('${p.id}', ${step})" class="w-8 h-8 rounded-md bg-white border border-gray-300 flex items-center justify-center font-bold text-amber-900 shadow-sm">+</button>
+                  <button onclick="updateQty('${p.id}', -${step})" class="w-8 h-8 rounded-md bg-white border border-gray-300 flex items-center justify-center font-bold text-amber-900 shadow-sm active:bg-amber-100 touch-manipulation">-</button>
+                  <span class="font-bold text-amber-900 text-xs sm:text-sm">${qty} ${displayUnitName}</span>
+                  <button onclick="updateQty('${p.id}', ${step})" class="w-8 h-8 rounded-md bg-white border border-gray-300 flex items-center justify-center font-bold text-amber-900 shadow-sm active:bg-amber-100 touch-manipulation">+</button>
                 </div>
               ` : isSelectingUnit ? `
                 <div class="bg-amber-50 p-2 rounded-lg border border-amber-200 text-center space-y-1.5">
                   <p class="text-[10px] font-bold text-amber-900">請先選擇計價單位：</p>
                   <div class="flex flex-wrap gap-1 justify-center">
                     ${units.map(u => `
-                      <button onclick="confirmUnitAndAdd('${p.id}', '${u.name}', ${u.price}, ${u.isOnSite})" class="px-2.5 py-1 bg-amber-800 hover:bg-amber-900 text-white rounded text-xs font-bold transition shadow-sm">
+                      <button onclick="confirmUnitAndAdd('${p.id}', '${u.name}', ${u.price}, ${u.isOnSite}, ${u.minUnit !== undefined ? u.minUnit : (u.name.includes('斤') ? 0.5 : 1)})" class="px-2.5 py-1.5 bg-amber-800 hover:bg-amber-900 text-white rounded text-xs font-bold transition shadow-sm touch-manipulation">
                         ${u.name} ${u.isOnSite ? '(時價)' : `($${u.price})`}
                       </button>
                     `).join('')}
                   </div>
                 </div>
               ` : `
-                <button onclick="handleFirstClick('${p.id}')" class="w-full bg-amber-800 hover:bg-amber-900 text-white font-bold py-2 rounded-lg text-sm transition flex items-center justify-center gap-1 shadow-sm mt-2">
+                <button onclick="handleFirstClick('${p.id}')" class="w-full bg-amber-800 hover:bg-amber-900 text-white font-bold py-2 rounded-lg text-xs sm:text-sm transition flex items-center justify-center gap-1 shadow-sm mt-2 touch-manipulation">
                   <i class="fa-solid fa-plus text-xs"></i> 加入預約
                 </button>
               `}
@@ -605,24 +731,24 @@
       const product = products.find(p => p.id == id);
       if (!product) return;
 
-      const units = product.units && product.units.length > 0 ? product.units : [{ name: '斤', price: 0, isOnSite: false }];
+      const units = product.units && product.units.length > 0 ? product.units : [{ name: '斤', price: 0, isOnSite: false, minUnit: 0.5 }];
       if (units.length === 1) {
-        confirmUnitAndAdd(id, units[0].name, units[0].price, units[0].isOnSite);
+        confirmUnitAndAdd(id, units[0].name, units[0].price, units[0].isOnSite, units[0].minUnit !== undefined ? units[0].minUnit : (units[0].name.includes('斤') ? 0.5 : 1));
       } else {
         selectingUnitProduct[id] = true;
         renderProducts();
       }
     }
 
-    function confirmUnitAndAdd(id, unitName, unitPrice, isOnSite) {
+    function confirmUnitAndAdd(id, unitName, unitPrice, isOnSite, minUnit) {
       const product = products.find(p => p.id == id);
       if (!product) return;
 
       selectingUnitProduct[id] = false;
-      const isWeight = unitName.includes('斤');
-      const initialQty = isWeight ? 0.5 : 1;
+      // 新增功能三：以 minUnit 作為起始數量
+      const initialQty = minUnit !== undefined ? Number(minUnit) : (unitName.includes('斤') ? 0.5 : 1);
 
-      cart.push({ ...product, qty: initialQty, unitName, unitPrice, isOnSite });
+      cart.push({ ...product, qty: initialQty, unitName, unitPrice, isOnSite, minUnit: initialQty });
       updateCartUI();
       renderProducts();
     }
@@ -661,8 +787,7 @@
       }
 
       container.innerHTML = cart.map(item => {
-        const isWeight = item.unitName.includes('斤');
-        const step = isWeight ? 0.5 : 1;
+        const step = item.minUnit !== undefined ? Number(item.minUnit) : (item.unitName.includes('斤') ? 0.5 : 1);
         
         let itemTotalText = '';
         if (item.isOnSite) {
@@ -682,9 +807,9 @@
             </div>
             <div class="flex items-center space-x-2">
               <div class="flex items-center bg-gray-100 rounded border">
-                <button onclick="updateQty('${item.id}', -${step})" class="px-2 py-0.5 text-xs font-bold">-</button>
+                <button onclick="updateQty('${item.id}', -${step})" class="px-2.5 py-1 text-xs font-bold touch-manipulation">-</button>
                 <span class="px-2 text-xs font-bold">${item.qty} ${item.unitName}</span>
-                <button onclick="updateQty('${item.id}', ${step})" class="px-2 py-0.5 text-xs font-bold">+</button>
+                <button onclick="updateQty('${item.id}', ${step})" class="px-2.5 py-1 text-xs font-bold touch-manipulation">+</button>
               </div>
               <span class="font-bold text-amber-800 text-sm w-20 text-right">${itemTotalText}</span>
             </div>
@@ -777,6 +902,7 @@
         document.getElementById('adminPanelModal').classList.remove('hidden');
         renderOrders();
         renderProductsAdmin();
+        renderCustomGroupsAdmin();
         renderCategoriesAdmin();
       } else {
         alert('密碼錯誤！');
@@ -790,13 +916,15 @@
     function switchAdminTab(tab) {
       document.getElementById('sectionOrders').classList.toggle('hidden', tab !== 'orders');
       document.getElementById('sectionProducts').classList.toggle('hidden', tab !== 'products');
+      document.getElementById('sectionCustomGroups').classList.toggle('hidden', tab !== 'customGroups');
       document.getElementById('sectionCategories').classList.toggle('hidden', tab !== 'categories');
       document.getElementById('sectionSettings').classList.toggle('hidden', tab !== 'settings');
 
-      document.getElementById('tabOrders').className = tab === 'orders' ? 'px-4 py-2 font-bold rounded-lg transition bg-amber-800 text-white' : 'px-4 py-2 font-bold rounded-lg transition text-gray-600 hover:bg-gray-100';
-      document.getElementById('tabProducts').className = tab === 'products' ? 'px-4 py-2 font-bold rounded-lg transition bg-amber-800 text-white' : 'px-4 py-2 font-bold rounded-lg transition text-gray-600 hover:bg-gray-100';
-      document.getElementById('tabCategories').className = tab === 'categories' ? 'px-4 py-2 font-bold rounded-lg transition bg-amber-800 text-white' : 'px-4 py-2 font-bold rounded-lg transition text-gray-600 hover:bg-gray-100';
-      document.getElementById('tabSettings').className = tab === 'settings' ? 'px-4 py-2 font-bold rounded-lg transition bg-amber-800 text-white' : 'px-4 py-2 font-bold rounded-lg transition text-gray-600 hover:bg-gray-100';
+      document.getElementById('tabOrders').className = tab === 'orders' ? 'px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold rounded-lg transition bg-amber-800 text-white' : 'px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold rounded-lg transition text-gray-600 hover:bg-gray-100';
+      document.getElementById('tabProducts').className = tab === 'products' ? 'px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold rounded-lg transition bg-amber-800 text-white' : 'px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold rounded-lg transition text-gray-600 hover:bg-gray-100';
+      document.getElementById('tabCustomGroups').className = tab === 'customGroups' ? 'px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold rounded-lg transition bg-amber-800 text-white' : 'px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold rounded-lg transition text-gray-600 hover:bg-gray-100';
+      document.getElementById('tabCategories').className = tab === 'categories' ? 'px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold rounded-lg transition bg-amber-800 text-white' : 'px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold rounded-lg transition text-gray-600 hover:bg-gray-100';
+      document.getElementById('tabSettings').className = tab === 'settings' ? 'px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold rounded-lg transition bg-amber-800 text-white' : 'px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold rounded-lg transition text-gray-600 hover:bg-gray-100';
     }
 
     function toggleSelectAllOrders(source) {
@@ -837,7 +965,7 @@
 
       tbody.innerHTML = orders.map(o => `
         <tr class="border-b hover:bg-gray-50">
-          <td class="p-3 text-center"><input type="checkbox" value="${o.id}" class="order-checkbox"></td>
+          <td class="p-3 text-center"><input type="checkbox" value="${o.id}" class="order-checkbox w-4 h-4"></td>
           <td class="p-3">
             <span class="font-bold text-gray-800">${o.id}</span>
             <div class="text-xs text-gray-400">${o.date}</div>
@@ -854,9 +982,9 @@
               ${o.status}
             </span>
           </td>
-          <td class="p-3 text-right space-x-1">
-            <button onclick="toggleOrderStatus('${o.id}')" class="text-xs bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded transition">切換狀態</button>
-            <button onclick="deleteOrder('${o.id}')" class="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-2 py-1 rounded transition">刪除</button>
+          <td class="p-3 text-right space-x-1 whitespace-nowrap">
+            <button onclick="toggleOrderStatus('${o.id}')" class="text-xs bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded transition touch-manipulation">切換狀態</button>
+            <button onclick="deleteOrder('${o.id}')" class="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-2 py-1 rounded transition touch-manipulation">刪除</button>
           </td>
         </tr>
       `).join('');
@@ -868,8 +996,8 @@
         <tr class="border-b hover:bg-gray-50">
           <td class="p-3 font-bold text-gray-800">${cat}</td>
           <td class="p-3 text-right space-x-2">
-            <button onclick="editCategoryPrompt(${index})" class="text-xs bg-amber-100 hover:bg-amber-200 text-amber-900 px-2.5 py-1 rounded font-bold transition">修改名稱</button>
-            <button onclick="deleteCategory('${cat}')" class="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-2.5 py-1 rounded font-bold transition">刪除</button>
+            <button onclick="editCategoryPrompt(${index})" class="text-xs bg-amber-100 hover:bg-amber-200 text-amber-900 px-2.5 py-1 rounded font-bold transition touch-manipulation">修改名稱</button>
+            <button onclick="deleteCategory('${cat}')" class="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-2.5 py-1 rounded font-bold transition touch-manipulation">刪除</button>
           </td>
         </tr>
       `).join('');
@@ -911,9 +1039,15 @@
     function renderProductsAdmin() {
       const tbody = document.getElementById('productsTableBody');
       tbody.innerHTML = products.map(p => {
-        const unitDisplay = (p.units || []).map(u => `${u.name}: ${u.isOnSite ? '<span class="text-blue-600 font-bold">時價</span>' : '$' + u.price}`).join('、');
+        const unitDisplay = (p.units || []).map(u => `${u.name}(底線${u.minUnit || (u.name.includes('斤') ? 0.5 : 1)}): ${u.isOnSite ? '<span class="text-blue-600 font-bold">時價</span>' : '$' + u.price}`).join('、');
+        
+        // 新增功能四：暫時下架顯示狀態按鈕
+        const unlistedBadge = p.isUnlisted 
+          ? `<span class="bg-red-100 text-red-800 px-2 py-0.5 rounded text-xs font-bold">已暫時下架</span>` 
+          : `<span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-xs font-bold">上架中</span>`;
+
         return `
-          <tr class="border-b hover:bg-gray-50">
+          <tr class="border-b hover:bg-gray-50 ${p.isUnlisted ? 'bg-gray-50/80 opacity-75' : ''}">
             <td class="p-3">
               <img src="${p.image}" class="w-12 h-12 rounded object-cover border" onerror="this.src='https://via.placeholder.com/80?text=無圖'">
             </td>
@@ -923,26 +1057,55 @@
             </td>
             <td class="p-3"><span class="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-xs font-semibold">${p.category}</span></td>
             <td class="p-3"><span class="bg-amber-100 text-amber-900 px-2 py-0.5 rounded text-xs font-bold">${p.internalCat || '一般商品'}</span></td>
-            <td class="p-3 text-xs">${unitDisplay}</td>
-            <td class="p-3 text-right space-x-2">
-              <button onclick="editProduct('${p.id}')" class="text-xs bg-amber-100 hover:bg-amber-200 text-amber-900 px-2.5 py-1 rounded font-bold transition">編輯</button>
-              <button onclick="deleteProduct('${p.id}')" class="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-2.5 py-1 rounded font-bold transition">刪除</button>
+            <td class="p-3 text-xs max-w-xs">${unitDisplay}</td>
+            <td class="p-3">${unlistedBadge}</td>
+            <td class="p-3 text-right space-x-1.5 whitespace-nowrap">
+              <!-- 新增功能四：暫時下架/重新上架開關按鈕 -->
+              <button onclick="toggleProductUnlist('${p.id}')" class="text-xs ${p.isUnlisted ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-800' : 'bg-orange-100 hover:bg-orange-200 text-orange-800'} px-2.5 py-1 rounded font-bold transition touch-manipulation">
+                ${p.isUnlisted ? '重新上架' : '暫時下架'}
+              </button>
+              <button onclick="editProduct('${p.id}')" class="text-xs bg-amber-100 hover:bg-amber-200 text-amber-900 px-2.5 py-1 rounded font-bold transition touch-manipulation">編輯</button>
+              <button onclick="deleteProduct('${p.id}')" class="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-2.5 py-1 rounded font-bold transition touch-manipulation">刪除</button>
             </td>
           </tr>
         `;
       }).join('');
     }
 
-    function addUnitRow(name = '', price = '', isOnSite = false) {
+    // 新增功能四：切換暫時下架狀態
+    async function toggleProductUnlist(id) {
+      const product = products.find(p => p.id == id);
+      if (!product) return;
+      
+      const newUnlisted = !product.isUnlisted;
+      try {
+        const { error } = await supabaseClient.from('products').update({ is_unlisted: newUnlisted }).eq('id', Number(id));
+        if (error) throw error;
+        await fetchCloudData();
+        renderProductsAdmin();
+        renderProducts();
+      } catch (err) {
+        alert('更新下架狀態失敗：' + err.message);
+      }
+    }
+
+    // 新增功能三：新增單位時加上 minUnit (預設 1 或 0.5)
+    function addUnitRow(name = '', price = '', isOnSite = false, minUnit = 1) {
       const container = document.getElementById('unitRowsContainer');
       const div = document.createElement('div');
-      div.className = 'flex items-center space-x-2 unit-row bg-white p-2 rounded border';
+      div.className = 'flex flex-wrap items-center gap-2 unit-row bg-white p-2 rounded border';
       div.innerHTML = `
-        <input type="text" placeholder="單位 (如: 斤, 隻)" value="${name}" class="unit-name-input w-1/3 px-2 py-1 border rounded text-xs outline-none" required>
-        <input type="number" min="0" placeholder="價格 ($)" value="${price}" class="unit-price-input w-1/3 px-2 py-1 border rounded text-xs outline-none" required>
-        <label class="flex items-center space-x-1 text-xs cursor-pointer w-1/3 select-none">
+        <input type="text" placeholder="單位 (如: 斤, 隻)" value="${name}" class="unit-name-input flex-1 min-w-[70px] px-2 py-1 border rounded text-xs outline-none" required>
+        <input type="number" min="0" placeholder="價格 ($)" value="${price}" class="unit-price-input flex-1 min-w-[70px] px-2 py-1 border rounded text-xs outline-none" required>
+        
+        <select class="unit-minunit-select px-2 py-1 border rounded text-xs bg-amber-50 font-bold text-amber-900 outline-none">
+          <option value="1" ${minUnit == 1 ? 'selected' : ''}>最小: 整數 (1)</option>
+          <option value="0.5" ${minUnit == 0.5 ? 'selected' : ''}>最小: 0.5</option>
+        </select>
+
+        <label class="flex items-center space-x-1 text-xs cursor-pointer select-none">
           <input type="checkbox" class="unit-onsite-checkbox w-3.5 h-3.5 text-amber-800 rounded" ${isOnSite ? 'checked' : ''}>
-          <span class="font-bold text-blue-700">設為時價</span>
+          <span class="font-bold text-blue-700 whitespace-nowrap">時價</span>
         </label>
         <button type="button" onclick="this.parentElement.remove()" class="text-red-500 hover:text-red-700 font-bold px-1 text-base">&times;</button>
       `;
@@ -960,13 +1123,111 @@
       catSelect.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
 
       document.getElementById('unitRowsContainer').innerHTML = '';
-      addUnitRow('斤', '', false);
+      addUnitRow('斤', '', false, 0.5);
       currentUploadedImageBase64 = '';
       document.getElementById('productModal').classList.remove('hidden');
     }
 
     function closeProductModal() {
       document.getElementById('productModal').classList.add('hidden');
+    }
+
+    // 新增功能一：自訂群組後台管理渲染
+    function renderCustomGroupsAdmin() {
+      const tbody = document.getElementById('customGroupsTableBody');
+      if (customGroups.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3" class="text-center py-6 text-gray-400">目前無自訂匯出群組，點擊右上角「新增群組」即可建立</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = customGroups.map(g => `
+        <tr class="border-b hover:bg-gray-50">
+          <td class="p-3 font-bold text-amber-950">${g.name}</td>
+          <td class="p-3 text-xs text-gray-600 max-w-md">${(g.productNames || []).join('、') || '（未選擇商品）'}</td>
+          <td class="p-3 text-right space-x-2">
+            <button onclick="editCustomGroup('${g.id}')" class="text-xs bg-amber-100 hover:bg-amber-200 text-amber-900 px-2.5 py-1 rounded font-bold transition touch-manipulation">編輯</button>
+            <button onclick="deleteCustomGroup('${g.id}')" class="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-2.5 py-1 rounded font-bold transition touch-manipulation">刪除</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function openCustomGroupModal(id = null) {
+      document.getElementById('customGroupId').value = id || '';
+      document.getElementById('customGroupName').value = '';
+      const checkboxesContainer = document.getElementById('customGroupProductCheckboxes');
+
+      let selectedProductNames = [];
+      if (id) {
+        const group = customGroups.find(g => g.id == id);
+        if (group) {
+          document.getElementById('customGroupName').value = group.name;
+          selectedProductNames = group.productNames || [];
+          document.getElementById('customGroupModalTitle').innerText = '編輯自訂匯出群組';
+        }
+      } else {
+        document.getElementById('customGroupModalTitle').innerText = '新增自訂匯出群組';
+      }
+
+      checkboxesContainer.innerHTML = products.map(p => `
+        <label class="flex items-center space-x-2 p-1.5 hover:bg-white rounded cursor-pointer text-sm">
+          <input type="checkbox" value="${p.name}" class="group-prod-checkbox w-4 h-4 text-amber-800 rounded" ${selectedProductNames.includes(p.name) ? 'checked' : ''}>
+          <span class="font-medium text-gray-800">${p.name} <span class="text-xs text-gray-400">(${p.category})</span></span>
+        </label>
+      `).join('');
+
+      document.getElementById('customGroupModal').classList.remove('hidden');
+    }
+
+    function closeCustomGroupModal() {
+      document.getElementById('customGroupModal').classList.add('hidden');
+    }
+
+    async function saveCustomGroup() {
+      const idVal = document.getElementById('customGroupId').value;
+      const groupName = document.getElementById('customGroupName').value.trim();
+      if (!groupName) { alert('請輸入群組名稱！'); return; }
+
+      const selectedProds = Array.from(document.querySelectorAll('.group-prod-checkbox:checked')).map(cb => cb.value);
+
+      try {
+        const payload = {
+          name: groupName,
+          product_names: selectedProds
+        };
+
+        if (idVal) {
+          const { error } = await supabaseClient.from('product_groups').update(payload).eq('id', Number(idVal));
+          if (error) throw error;
+        } else {
+          const { error } = await supabaseClient.from('product_groups').insert([payload]);
+          if (error) throw error;
+        }
+
+        alert('自訂群組已成功儲存！');
+        closeCustomGroupModal();
+        await fetchCloudData();
+        renderCustomGroupsAdmin();
+      } catch (err) {
+        alert('儲存群組失敗：' + err.message);
+      }
+    }
+
+    function editCustomGroup(id) {
+      openCustomGroupModal(id);
+    }
+
+    async function deleteCustomGroup(id) {
+      if (confirm('確定要刪除此群組嗎？')) {
+        try {
+          const { error } = await supabaseClient.from('product_groups').delete().eq('id', Number(id));
+          if (error) throw error;
+          await fetchCloudData();
+          renderCustomGroupsAdmin();
+        } catch (err) {
+          alert('刪除群組失敗：' + err.message);
+        }
+      }
     }
 
     function openExportModal(mode) {
@@ -981,6 +1242,23 @@
       } else {
         document.getElementById('exportModalDesc').innerText = '請選擇要匯出的格式：';
       }
+
+      // 新增功能一：動態渲染自訂群組匯出選項按鈕
+      const customContainer = document.getElementById('customGroupExportButtons');
+      if (customGroups.length > 0) {
+        customContainer.innerHTML = `
+          <p class="text-xs font-bold text-gray-500 my-1">自訂群組批量數量統計 Word 匯出：</p>
+          ${customGroups.map(g => `
+            <button onclick="executeCustomGroupExport('${g.id}')" class="w-full text-left px-4 py-2.5 bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded-lg font-bold text-amber-950 transition flex items-center justify-between touch-manipulation">
+              <span>${g.name} (Word 總和檔)</span>
+              <i class="fa-solid fa-file-word text-amber-800"></i>
+            </button>
+          `).join('')}
+        `;
+      } else {
+        customContainer.innerHTML = '';
+      }
+
       document.getElementById('exportModal').classList.remove('hidden');
     }
 
@@ -1018,8 +1296,9 @@
           const uName = row.querySelector('.unit-name-input').value.trim();
           const uPrice = parseFloat(row.querySelector('.unit-price-input').value);
           const uOnSite = row.querySelector('.unit-onsite-checkbox').checked;
+          const uMinUnit = parseFloat(row.querySelector('.unit-minunit-select').value); // 新增功能三：讀取 minUnit
           if (uName && !isNaN(uPrice)) { 
-            units.push({ name: uName, price: uPrice, isOnSite: uOnSite }); 
+            units.push({ name: uName, price: uPrice, isOnSite: uOnSite, minUnit: uMinUnit }); 
           }
         });
         
@@ -1081,8 +1360,8 @@
 
       const container = document.getElementById('unitRowsContainer');
       container.innerHTML = '';
-      const units = p.units && p.units.length > 0 ? p.units : [{ name: '斤', price: 0, isOnSite: false }];
-      units.forEach(u => addUnitRow(u.name, u.price, u.isOnSite));
+      const units = p.units && p.units.length > 0 ? p.units : [{ name: '斤', price: 0, isOnSite: false, minUnit: 0.5 }];
+      units.forEach(u => addUnitRow(u.name, u.price, u.isOnSite, u.minUnit !== undefined ? u.minUnit : (u.name.includes('斤') ? 0.5 : 1)));
 
       document.getElementById('modalTitle').innerText = '編輯食材品項';
       document.getElementById('productModal').classList.remove('hidden');
@@ -1112,6 +1391,7 @@
       }
     }
 
+    // 既有 Word / Excel 匯出
     function executeExport(type) {
       let targetOrders = orders;
       if (exportMode === 'batch') {
@@ -1182,6 +1462,114 @@
         link.click();
         document.body.removeChild(link);
       }
+
+      closeExportModal();
+    }
+
+    // 新增功能一：自訂群組 Word 匯出（含單項記錄與數量總和）
+    function executeCustomGroupExport(groupId) {
+      const group = customGroups.find(g => g.id == groupId);
+      if (!group) return;
+
+      let targetOrders = orders;
+      if (exportMode === 'batch') {
+        const selectedIds = Array.from(document.querySelectorAll('.order-checkbox:checked')).map(cb => cb.value);
+        targetOrders = orders.filter(o => selectedIds.includes(o.id));
+      }
+
+      if (targetOrders.length === 0) {
+        alert('沒有可匯出的訂單資料');
+        return;
+      }
+
+      // 建立訂單暱稱對照（如：甲、乙、丙）
+      const orderLabels = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸', '子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+      const orderNameMap = {};
+      targetOrders.forEach((o, idx) => {
+        const label = orderLabels[idx] || (idx + 1).toString();
+        orderNameMap[o.id] = { label, custName: o.custName };
+      });
+
+      // 整理群組商品的統計資料： { "鴨頭": { "10(甲)": 10, ... total: 60 }, ... }
+      const groupStats = {};
+      (group.productNames || []).forEach(pName => {
+        groupStats[pName] = { records: [], total: 0 };
+      });
+
+      targetOrders.forEach(o => {
+        if (!o.rawItems) return;
+        const label = orderNameMap[o.id].label;
+        o.rawItems.forEach(item => {
+          if (groupStats[item.name]) {
+            const qty = Number(item.qty);
+            groupStats[item.name].records.push(`${qty}(${label})`);
+            groupStats[item.name].total += qty;
+          }
+        });
+      });
+
+      // 生成 Word HTML 內容
+      let contentHtml = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head><meta charset='utf-8'><title>${group.name} 匯出統計</title></head>
+        <body style="font-family: 'Microsoft JhengHei', Arial; padding: 20px;">
+          <h2 style="text-align: center; color: #78350f;">隨喜商行 - 【${group.name}】數量總和統計表</h2>
+          <p style="text-align: center; font-size: 12px; color: #666;">列印日期：${new Date().toLocaleString('zh-TW')} | 對應勾選訂單數：${targetOrders.length} 筆</p>
+          
+          <div style="margin-bottom: 15px; padding: 10px; background-color: #fef3c7; border: 1px solid #fde68a; font-size: 13px;">
+            <strong>訂單代號對照：</strong><br>
+            ${targetOrders.map(o => `【${orderNameMap[o.id].label}】: ${o.custName} (編號: ${o.id})`).join(' &nbsp;|&nbsp; ')}
+          </div>
+
+          <hr style="border: 1px solid #d97706; margin-bottom: 20px;">
+          
+          <table border="1" cellspacing="0" cellpadding="8" style="width: 100%; border-collapse: collapse; border-color: #ccc; font-size: 15px;">
+            <thead>
+              <tr style="background-color: #92400e; color: #ffffff;">
+                <th style="padding: 10px; text-align: left; width: 30%;">品項名稱</th>
+                <th style="padding: 10px; text-align: left;">各訂單數量紀錄與總和計算</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      let hasData = false;
+      Object.keys(groupStats).forEach(pName => {
+        const stat = groupStats[pName];
+        if (stat.records.length > 0) {
+          hasData = true;
+          const detailStr = stat.records.join('、');
+          // 格式如：鴨頭：10(甲)、30(乙)、20(丙) ＝ 60
+          contentHtml += `
+            <tr>
+              <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold; color: #78350f;">${pName}</td>
+              <td style="padding: 10px; border-bottom: 1px solid #eee;">${detailStr} ＝ <strong>${stat.total}</strong></td>
+            </tr>
+          `;
+        } else {
+          contentHtml += `
+            <tr>
+              <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold; color: #555;">${pName}</td>
+              <td style="padding: 10px; border-bottom: 1px solid #eee; color: #999;">所選訂單中無此商品訂購紀錄 ＝ 0</td>
+            </tr>
+          `;
+        }
+      });
+
+      if (!hasData && Object.keys(groupStats).length === 0) {
+        contentHtml += `<tr><td colspan="2" style="padding: 20px; text-align: center; color: #999;">此群組未包含任何商品品項</td></tr>`;
+      }
+
+      contentHtml += `</tbody></table></body></html>`;
+
+      const blob = new Blob(['\ufeff' + contentHtml], { type: 'application/msword' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `隨喜商行_${group.name}_數量總和_${new Date().toISOString().slice(0,10)}.doc`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
 
       closeExportModal();
     }
