@@ -1409,17 +1409,30 @@
           <head>
             <meta charset='utf-8'>
             <title>完整訂單明細</title>
+            <!--[if gte mso 9]>
+            <xml>
+              <w:WordDocument>
+                <w:View>Print</w:View>
+                <w:Zoom>100</w:Zoom>
+              </w:WordDocument>
+            </xml>
+            <![endif]-->
             <style>
-              body { font-family: 'Microsoft JhengHei', Arial, sans-serif; padding: 20px; line-height: 1.8; font-size: 16pt; }
-              .order-page { page-break-after: always; padding-bottom: 20px; }
-              .item-row { margin-bottom: 8px; font-size: 16pt; }
-              .order-footer { margin-top: 30px; text-align: right; font-size: 16pt; font-weight: bold; }
+              @page {
+                size: 105mm 148mm;
+                margin: 10mm;
+              }
+              body { font-family: 'Microsoft JhengHei', Arial, sans-serif; padding: 0px; line-height: 1.6; font-size: 14pt; }
+              .order-page { page-break-after: always; min-h-screen; display: flex; flex-direction: column; justify-content: space-between; }
+              .item-row { margin-bottom: 8px; font-size: 14pt; }
+              .order-footer { margin-top: 30px; text-align: right; font-size: 14pt; font-weight: bold; }
+              .page-break { page-break-after: always; mso-break-type: page-break; }
             </style>
           </head>
           <body>
         `;
 
-        targetOrders.forEach((o) => {
+        targetOrders.forEach((o, index) => {
           let itemsMarkup = '';
           if (o.rawItems && o.rawItems.length > 0) {
             itemsMarkup = o.rawItems.map(item => `
@@ -1456,11 +1469,16 @@
               <div class="item-list">
                 ${itemsMarkup}
               </div>
+              <p class="page-break" style="page-break-after: always; mso-break-type: page-break;"></p>
               <div class="order-footer">
                 ${nextDayStr}
               </div>
             </div>
           `;
+
+          if (index < targetOrders.length - 1) {
+            contentHtml += `<br clear="all" style="page-break-before: always; mso-break-type: page-break;" />`;
+          }
         });
 
         contentHtml += `</body></html>`;
@@ -1599,13 +1617,6 @@
             <tr>
               <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold; color: #78350f;">${pName}</td>
               <td style="padding: 10px; border-bottom: 1px solid #eee;">${detailStr} ＝ <strong>${stat.total}</strong></td>
-            </tr>
-          `;
-        } else {
-          contentHtml += `
-            <tr>
-              <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold; color: #555;">${pName}</td>
-              <td style="padding: 10px; border-bottom: 1px solid #eee; color: #999;">所選訂單中無此商品訂購紀錄 ＝ 0</td>
             </tr>
           `;
         }
