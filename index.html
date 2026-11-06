@@ -338,7 +338,7 @@
         </button>
         <button onclick="executeExport('老闆娘單')" class="w-full text-left px-4 py-3 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg font-bold text-purple-900 transition flex items-center justify-between touch-manipulation">
           <span>老闆娘單 (Word 檔)</span>
-          <i class="fa-solid fa-file-word text-purple-700"></i>
+          <i class="fa-solid fa-file-word text-blue-700"></i>
         </button>
         <button onclick="executeExport('麵單')" class="w-full text-left px-4 py-3 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg font-bold text-emerald-900 transition flex items-center justify-between touch-manipulation">
           <span>麵單 (Word 檔)</span>
@@ -1259,6 +1259,7 @@
         customContainer.innerHTML = '';
       }
 
+      document.getElementById('exportModal').classList.add('hidden'); // Fix original logic if needed, or let modal open
       document.getElementById('exportModal').classList.remove('hidden');
     }
 
@@ -1423,16 +1424,16 @@
                 margin: 10mm;
               }
               body { font-family: 'Microsoft JhengHei', Arial, sans-serif; padding: 0px; line-height: 1.6; font-size: 14pt; }
-              .order-page { page-break-after: always; min-h-screen; display: flex; flex-direction: column; justify-content: space-between; }
+              .order-page { page-break-after: always; height: 100%; position: relative; box-sizing: border-box; }
               .item-row { margin-bottom: 8px; font-size: 14pt; }
-              .order-footer { margin-top: 30px; text-align: right; font-size: 14pt; font-weight: bold; }
+              .order-footer { position: absolute; bottom: 0; right: 0; text-align: right; font-size: 14pt; font-weight: bold; }
               .page-break { page-break-after: always; mso-break-type: page-break; }
             </style>
           </head>
           <body>
         `;
 
-        targetOrders.forEach((o, index) => {
+        targetOrders.forEach((o) => {
           let itemsMarkup = '';
           if (o.rawItems && o.rawItems.length > 0) {
             itemsMarkup = o.rawItems.map(item => `
@@ -1469,16 +1470,12 @@
               <div class="item-list">
                 ${itemsMarkup}
               </div>
-              <p class="page-break" style="page-break-after: always; mso-break-type: page-break;"></p>
               <div class="order-footer">
                 ${nextDayStr}
               </div>
             </div>
+            <div style="mso-special-character:line-break; page-break-after:always;"></div>
           `;
-
-          if (index < targetOrders.length - 1) {
-            contentHtml += `<br clear="all" style="page-break-before: always; mso-break-type: page-break;" />`;
-          }
         });
 
         contentHtml += `</body></html>`;
@@ -1540,7 +1537,7 @@
       closeExportModal();
     }
 
-    // 新增功能一：自訂群組 Word 匯出（含單項記錄與數量總和）
+    // 新增功能一：自訂群組 Word 匯出（含單項記錄與數量總和，無人下單則不顯示該欄位）
     function executeCustomGroupExport(groupId) {
       const group = customGroups.find(g => g.id == groupId);
       if (!group) return;
@@ -1610,6 +1607,7 @@
       let hasData = false;
       Object.keys(groupStats).forEach(pName => {
         const stat = groupStats[pName];
+        // 修改二：如果分類中有商品今天沒有人下單（records.length === 0），則這個欄位不用出現在這個 doc 檔中
         if (stat.records.length > 0) {
           hasData = true;
           const detailStr = stat.records.join('、');
@@ -1622,8 +1620,8 @@
         }
       });
 
-      if (!hasData && Object.keys(groupStats).length === 0) {
-        contentHtml += `<tr><td colspan="2" style="padding: 20px; text-align: center; color: #999;">此群組未包含任何商品品項</td></tr>`;
+      if (!hasData) {
+        contentHtml += `<tr><td colspan="2" style="padding: 20px; text-align: center; color: #999;">所選訂單中無此群組任何商品的訂購紀錄</td></tr>`;
       }
 
       contentHtml += `</tbody></table></body></html>`;
