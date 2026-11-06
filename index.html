@@ -1041,7 +1041,7 @@
       tbody.innerHTML = products.map(p => {
         const unitDisplay = (p.units || []).map(u => `${u.name}(底線${u.minUnit || (u.name.includes('斤') ? 0.5 : 1)}): ${u.isOnSite ? '<span class="text-blue-600 font-bold">時價</span>' : '$' + u.price}`).join('、');
         
-        // 新增功能四：暫時下架顯示狀態按鈕
+        // 新進功能四：暫時下架顯示狀態按鈕
         const unlistedBadge = p.isUnlisted 
           ? `<span class="bg-red-100 text-red-800 px-2 py-0.5 rounded text-xs font-bold">已暫時下架</span>` 
           : `<span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-xs font-bold">上架中</span>`;
@@ -1259,7 +1259,6 @@
         customContainer.innerHTML = '';
       }
 
-      document.getElementById('exportModal').classList.add('hidden'); // Fix original logic if needed, or let modal open
       document.getElementById('exportModal').classList.remove('hidden');
     }
 
@@ -1445,7 +1444,6 @@
             itemsMarkup = `<div class="item-row">${o.items || '無品項明細'}</div>`;
           }
 
-          // 計算隔天日期與時間標籤（例如 11/06早上 夏小詮）
           let nextDayStr = '';
           try {
             let orderDate = new Date(o.date);
@@ -1490,7 +1488,6 @@
         document.body.removeChild(link);
 
       } else {
-        // 既有的「老闆單」、「老闆娘單」、「麵單」 Word 匯出
         let contentHtml = `
           <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
           <head><meta charset='utf-8'><title>${type}</title></head>
@@ -1537,7 +1534,7 @@
       closeExportModal();
     }
 
-    // 新增功能一：自訂群組 Word 匯出（含單項記錄與數量總和，無人下單則不顯示該欄位）
+    // 自訂群組 Word 匯出（數量加總，直接列出各訂單數量與客人名稱，無代號）
     function executeCustomGroupExport(groupId) {
       const group = customGroups.find(g => g.id == groupId);
       if (!group) return;
@@ -1553,15 +1550,7 @@
         return;
       }
 
-      // 建立訂單暱稱對照（如：甲、乙、丙）
-      const orderLabels = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸', '子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
-      const orderNameMap = {};
-      targetOrders.forEach((o, idx) => {
-        const label = orderLabels[idx] || (idx + 1).toString();
-        orderNameMap[o.id] = { label, custName: o.custName };
-      });
-
-      // 整理群組商品的統計資料
+      // 整理群組商品的統計資料：直接以客人名稱記錄數量
       const groupStats = {};
       (group.productNames || []).forEach(pName => {
         groupStats[pName] = { records: [], total: 0 };
@@ -1569,11 +1558,11 @@
 
       targetOrders.forEach(o => {
         if (!o.rawItems) return;
-        const label = orderNameMap[o.id].label;
+        const custName = o.custName || '未具名';
         o.rawItems.forEach(item => {
           if (groupStats[item.name]) {
             const qty = Number(item.qty);
-            groupStats[item.name].records.push(`${qty}(${label})`);
+            groupStats[item.name].records.push(`${qty}(${custName})`);
             groupStats[item.name].total += qty;
           }
         });
@@ -1586,19 +1575,13 @@
         <body style="font-family: 'Microsoft JhengHei', Arial; padding: 20px;">
           <h2 style="text-align: center; color: #78350f;">隨喜商行 - 【${group.name}】數量總和統計表</h2>
           <p style="text-align: center; font-size: 12px; color: #666;">列印日期：${new Date().toLocaleString('zh-TW')} | 對應勾選訂單數：${targetOrders.length} 筆</p>
-          
-          <div style="margin-bottom: 15px; padding: 10px; background-color: #fef3c7; border: 1px solid #fde68a; font-size: 13px;">
-            <strong>訂單代號對照：</strong><br>
-            ${targetOrders.map(o => `【${orderNameMap[o.id].label}】: ${o.custName} (編號: ${o.id})`).join(' &nbsp;|&nbsp; ')}
-          </div>
-
           <hr style="border: 1px solid #d97706; margin-bottom: 20px;">
           
           <table border="1" cellspacing="0" cellpadding="8" style="width: 100%; border-collapse: collapse; border-color: #ccc; font-size: 15px;">
             <thead>
               <tr style="background-color: #92400e; color: #ffffff;">
                 <th style="padding: 10px; text-align: left; width: 30%;">品項名稱</th>
-                <th style="padding: 10px; text-align: left;">各訂單數量紀錄與總和計算</th>
+                <th style="padding: 10px; text-align: left;">各顧客數量紀錄與總和計算</th>
               </tr>
             </thead>
             <tbody>
@@ -1607,7 +1590,6 @@
       let hasData = false;
       Object.keys(groupStats).forEach(pName => {
         const stat = groupStats[pName];
-        // 修改二：如果分類中有商品今天沒有人下單（records.length === 0），則這個欄位不用出現在這個 doc 檔中
         if (stat.records.length > 0) {
           hasData = true;
           const detailStr = stat.records.join('、');
